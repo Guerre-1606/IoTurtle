@@ -7,6 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@400;500;600;700&family=Source+Sans+3:wght@400;600;700&display=swap" rel="stylesheet">
+  <!-- Primero los estilos compartidos, después los del login -->
   <link rel="stylesheet" href="/Css/style.css">
   <link rel="stylesheet" href="/Css/login.css">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🐢</text></svg>">
@@ -44,9 +45,12 @@
       <button role="tab" id="tabRegistro" aria-controls="panelRegistro" aria-selected="false" tabindex="-1">Crear cuenta</button>
     </div>
 
+    <!-- Mensajes que llegan del backend: /login?error=... o ?ok=... -->
     <p class="auth-msg" id="authMsg" role="alert" hidden></p>
 
+    <!-- Botón de Google: lo maneja Flask en /auth/google -->
     <a class="btn-google" href="/auth/google">
+      <!-- Descarga el ícono oficial de Google (guía de marca de Google Sign-In) y guárdalo en IMG/google.svg -->
       <img src="/IMG/google.svg" alt="" width="20" height="20" onerror="this.remove()">
       Continuar con Google
     </a>

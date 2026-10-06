@@ -11,10 +11,25 @@
     toggle.setAttribute("aria-expanded", String(!open));
     nav.classList.toggle("open", !open);
   });
+  const secBtn = document.getElementById("secBtn");
+  const secMenu = document.getElementById("secMenu");
+  const setSecciones = abierto => {
+    secBtn.setAttribute("aria-expanded", String(abierto));
+    secMenu.hidden = !abierto;
+  };
+  secBtn.addEventListener("click", () => setSecciones(secMenu.hidden));
+  document.addEventListener("click", e => {
+    if (!e.target.closest(".nav-dropdown") && window.innerWidth > 900) setSecciones(false);
+  });
+  document.addEventListener("keydown", e => {
+    if (e.key === "Escape" && !secMenu.hidden) { setSecciones(false); secBtn.focus(); }
+  });
+
   nav.querySelectorAll("a").forEach(a =>
     a.addEventListener("click", () => {
       toggle.setAttribute("aria-expanded", "false");
       nav.classList.remove("open");
+      setSecciones(false);
     })
   );
 
@@ -22,6 +37,7 @@
     topbar.classList.toggle("scrolled", window.scrollY > 10);
   }, { passive: true });
 
+  // Solo los enlaces que van a secciones de esta misma página (#problema, #equipo...)
   const navLinks = [...nav.querySelectorAll('a[href^="#"]')];
   const sections = navLinks.map(a => document.querySelector(a.getAttribute("href")));
   if ("IntersectionObserver" in window) {
@@ -60,6 +76,7 @@
   }
   document.querySelectorAll('[role="tablist"]').forEach(setupTabs);
 
+  // Botón copiar código
   const copyBtn = document.getElementById("copyBtn");
   copyBtn.addEventListener("click", async () => {
     const visible = document.querySelector(".code-tabs pre:not([hidden])");
@@ -81,14 +98,14 @@
     { id: "z5", short: "Refugio",    t: 20.6, h: 75, chip: [56, 206] }
   ];
   const criteria = { tmax: 30, tmin: 20, hmin: 60 };
-  const INTERVAL_MS = 1000;
+  const INTERVAL_MS = 2000;
 
   ZONES.forEach(z => (z.base = { t: z.t, h: z.h }));
 
-  const blessd = () => (Math.random() + Math.random() + Math.random() - 1.5) / 1.5;
+  const gauss = () => (Math.random() + Math.random() + Math.random() - 1.5) / 1.5;
   function nextReading(z) {
-    z.t += (z.base.t - z.t) * 0.12 + blessd() * 0.35;
-    z.h += (z.base.h - z.h) * 0.12 + blessd() * 1.1;
+    z.t += (z.base.t - z.t) * 0.12 + gauss() * 0.35;
+    z.h += (z.base.h - z.h) * 0.12 + gauss() * 1.1;
     z.h = Math.min(100, Math.max(0, z.h));
   }
 
