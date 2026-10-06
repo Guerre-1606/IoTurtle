@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Iniciar sesión · IoTurtle</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@400;500;600;700&family=Source+Sans+3:wght@400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/Css/style.css">
+  <link rel="stylesheet" href="/Css/login.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🐢</text></svg>">
+</head>
+<body class="auth-page">
+
+<!-- ============ PANEL IZQUIERDO: MARCA ============ -->
+<aside class="auth-side">
+  <a class="auth-back" href="/">← Volver al inicio</a>
+
+  <div class="auth-side-body">
+    <span class="auth-logo-tile"><img src="/IMG/Logo.jpeg" alt=""></span>
+    <p class="auth-wordmark"><span>Io</span><span>Tur</span><span>tle</span></p>
+    <p class="auth-pitch">Revisa en un solo lugar si la zona soleada, la sombra, el refugio y las zonas intermedias están dentro de su rango.</p>
+
+    <ul class="auth-zones" aria-label="Ejemplo de estado por zona">
+      <li><span class="z-dot ok"></span>Sombra<b>22.4 °C · 72 %HR</b></li>
+      <li><span class="z-dot ok"></span>Refugio<b>20.6 °C · 75 %HR</b></li>
+      <li><span class="z-dot high"></span>Soleada<b>31.2 °C · 58 %HR</b></li>
+    </ul>
+  </div>
+
+  <svg class="auth-wave" viewBox="0 0 600 160" preserveAspectRatio="none" aria-hidden="true">
+    <path d="M0 60c140 50 300 60 420 30 80-20 140-50 180-80v150H0z" fill="#7FA877" opacity=".55"/>
+    <path d="M0 100c160 40 320 40 460 10 60-12 110-30 140-50v100H0z" fill="#0E4E7E"/>
+  </svg>
+</aside>
+
+<!-- ============ PANEL DERECHO: FORMULARIOS ============ -->
+<main class="auth-main">
+  <div class="auth-card">
+
+    <div class="auth-tabs" role="tablist" aria-label="Acceso">
+      <button role="tab" id="tabLogin" aria-controls="panelLogin" aria-selected="true">Iniciar sesión</button>
+      <button role="tab" id="tabRegistro" aria-controls="panelRegistro" aria-selected="false" tabindex="-1">Crear cuenta</button>
+    </div>
+
+    <p class="auth-msg" id="authMsg" role="alert" hidden></p>
+
+    <a class="btn-google" href="/auth/google">
+      <img src="/IMG/google.svg" alt="" width="20" height="20" onerror="this.remove()">
+      Continuar con Google
+    </a>
+
+    <p class="auth-divider"><span>o con tu correo</span></p>
+
+    <!-- ---------- Iniciar sesión ---------- -->
+    <section role="tabpanel" id="panelLogin" aria-labelledby="tabLogin">
+      <form class="auth-form" action="/login" method="post" novalidate>
+        <label class="field">
+          <span>Correo</span>
+          <input type="email" name="correo" autocomplete="email" required>
+        </label>
+        <label class="field">
+          <span>Contraseña</span>
+          <span class="pass-wrap">
+            <input type="password" name="contrasena" autocomplete="current-password" required>
+            <button type="button" class="pass-toggle" aria-label="Mostrar contraseña">Ver</button>
+          </span>
+        </label>
+        <button class="btn btn-primary auth-submit" type="submit">Entrar</button>
+      </form>
+    </section>
+
+    <!-- ---------- Crear cuenta ---------- -->
+    <section role="tabpanel" id="panelRegistro" aria-labelledby="tabRegistro" hidden>
+      <form class="auth-form" action="/registro" method="post" novalidate>
+        <label class="field">
+          <span>Nombre completo</span>
+          <input type="text" name="nombre" autocomplete="name" required>
+        </label>
+        <label class="field">
+          <span>Correo</span>
+          <input type="email" name="correo" autocomplete="email" required>
+        </label>
+        <label class="field">
+          <span>Contraseña</span>
+          <span class="pass-wrap">
+            <input type="password" name="contrasena" autocomplete="new-password" minlength="8" required>
+            <button type="button" class="pass-toggle" aria-label="Mostrar contraseña">Ver</button>
+          </span>
+          <small class="hint">Mínimo 8 caracteres.</small>
+        </label>
+        <label class="field">
+          <span>Confirmar contraseña</span>
+          <input type="password" name="confirmar" autocomplete="new-password" required>
+        </label>
+        <button class="btn btn-primary auth-submit" type="submit">Crear cuenta</button>
+      </form>
+    </section>
+
+    <p class="auth-foot">Proyecto académico · Pontificia Universidad Javeriana, 2026</p>
+  </div>
+</main>
+
+<script src="/Js/login.js"></script>
+</body>
+</html>
