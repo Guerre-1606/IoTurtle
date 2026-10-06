@@ -1,0 +1,525 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>IoTurtle</title>
+  <meta name="description" content="IoTurtle: ecosistema IoT para supervisar por zonas las condiciones ambientales de recintos de tortugas terrestres. Pontificia Universidad Javeriana, 2026.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@400;500;600;700&family=Source+Sans+3:ital,wght@0,400;0,600;0,700;1,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="Css/style.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🐢</text></svg>">
+</head>
+<body>
+
+<a class="skip" href="#contenido">Saltar al contenido</a>
+
+<!-- ============ ENCABEZADO ============ -->
+<header class="topbar" id="topbar">
+  <a class="brand" href="#inicio" aria-label="IoTurtle, inicio">
+    <img class="brand-icon" src="IMG/Logo.jpeg" alt="">
+    <span class="wordmark"><span class="wm-io">Io</span><span class="wm-tur">Tur</span><span class="wm-tle">tle</span></span>
+  </a>
+
+  <button class="menu-toggle" id="menuToggle" aria-expanded="false" aria-controls="mainNav">
+    <span></span><span></span><span></span>
+    <span class="sr-only">Abrir menú</span>
+  </button>
+
+  <nav class="main-nav" id="mainNav" aria-label="Secciones">
+    <a href="#problema">Problema</a>
+    <a href="#metodologia">Metodología</a>
+    <a href="#awag">Bienestar</a>
+    <a href="#implementacion">Implementación</a>
+    <a href="#antecedentes">Antecedentes</a>
+    <a href="#equipo">Equipo</a>
+    <div class="nav-actions">
+      <!-- Cambia estos enlaces por las rutas reales de tu dashboard y tu login -->
+      <a class="btn-nav btn-nav-ghost" href="login.html">Iniciar sesión</a>
+      <a class="btn-nav btn-nav-primary" href="dashboard.html">Ir al dashboard</a>
+    </div>
+  </nav>
+</header>
+
+<main id="contenido">
+
+<!-- ============ HERO / PORTADA ============ -->
+<section class="hero" id="inicio">
+  <svg class="wave wave-top" viewBox="0 0 1440 320" preserveAspectRatio="none" aria-hidden="true">
+    <path d="M0 0h1440v260C1300 120 1060 40 760 60 480 78 300 10 200 0z" fill="#6E8B86"/>
+    <path d="M360 0h1080v320C1330 150 1100 60 820 70 600 78 470 30 360 0z" fill="#1A5446"/>
+    <path d="M900 0h540v250C1360 150 1200 70 1010 40 960 30 930 14 900 0z" fill="#17344F"/>
+    <path d="M1050 70c170 20 300 90 390 190v40C1350 200 1220 110 1050 70z" fill="#1B6B3A"/>
+  </svg>
+
+  <div class="hero-inner">
+    <div class="hero-text">
+      <div class="hero-brand">
+        <img class="hero-photo" src="IMG/Logo.jpeg" alt="">
+        <h1 class="hero-logo" aria-label="IoTurtle">
+          <span class="wm-io">Io</span><span class="wm-tur">Tur</span><span class="wm-tle">tle</span>
+        </h1>
+      </div>
+      <p class="hero-title">Ecosistema inteligente para la supervisión de microambientes de tortugas terrestres</p>
+      <p class="hero-lead">
+        Un recinto no tiene una sola temperatura. IoTurtle mide cada zona por separado —soleada, sombra,
+        refugio e intermedias— y le dice al cuidador si cada una cumple su función ambiental a lo largo del día.
+      </p>
+      <div class="hero-actions">
+        <a class="btn btn-primary" href="dashboard.html">Ir al dashboard</a>
+        <a class="btn btn-ghost" href="login.html">Iniciar sesión</a>
+      </div>
+      <p class="hero-meta">
+        IoT: Fundamentos y aplicaciones<br>
+        Facultad de Ingeniería, Pontificia Universidad Javeriana, Bogotá · 2026
+      </p>
+    </div>
+
+    <!-- Mapa del recinto (lo actualiza script.js) -->
+    <figure class="enclosure-card">
+      <figcaption>
+        <span class="live-dot" aria-hidden="true"></span>
+        Recinto de demostración, lecturas simuladas
+      </figcaption>
+      <svg class="enclosure" id="enclosureMap" viewBox="0 0 480 360" role="img"
+           aria-label="Mapa del recinto con cinco zonas y sus lecturas actuales">
+        <defs>
+          <pattern id="sand" width="14" height="14" patternUnits="userSpaceOnUse">
+            <circle cx="3" cy="4" r="1" fill="#CDBE98"/>
+            <circle cx="10" cy="10" r="1.2" fill="#D6C8A4"/>
+          </pattern>
+          <radialGradient id="sunGlow" cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stop-color="#F6D57A" stop-opacity=".9"/>
+            <stop offset="100%" stop-color="#F6D57A" stop-opacity="0"/>
+          </radialGradient>
+        </defs>
+        <rect x="8" y="8" width="464" height="344" rx="36" fill="#E7DCC0"/>
+        <rect x="8" y="8" width="464" height="344" rx="36" fill="url(#sand)"/>
+        <rect x="8" y="8" width="464" height="344" rx="36" fill="none" stroke="#8C7A55" stroke-width="3" stroke-dasharray="2 7" stroke-linecap="round"/>
+
+        <!-- Zona 1: soleada -->
+        <ellipse cx="115" cy="95" rx="110" ry="80" fill="url(#sunGlow)"/>
+        <path class="zone" data-zone="z1" d="M40 60c20-35 120-40 160-10s20 90-30 105-110 10-130-25-15-45 0-70z"/>
+        <!-- Zona 2: sombra -->
+        <path class="zone" data-zone="z2" d="M330 40c60-10 115 15 118 70s-40 85-95 78-68-45-62-90 9-52 39-58z"/>
+        <circle cx="395" cy="95" r="34" fill="#4E7A4A" opacity=".55"/>
+        <circle cx="370" cy="120" r="24" fill="#3F6A3D" opacity=".5"/>
+        <!-- Zona 3: intermedia -->
+        <path class="zone" data-zone="z3" d="M300 230c40-25 120-20 145 15s5 80-45 88-105-5-115-40 -5-50 15-63z"/>
+        <!-- Zona 4: intermedia -->
+        <path class="zone" data-zone="z4" d="M200 150c35-20 95-15 110 20s-10 70-55 72-80-15-80-45 5-35 25-47z"/>
+        <!-- Zona 5: refugio -->
+        <path class="zone" data-zone="z5" d="M40 240c15-30 95-40 125-10s25 85-25 95-100 0-105-35 -5-30 5-50z"/>
+        <path d="M68 300c10-40 70-45 80 0" fill="#6B5A43" stroke="#4A3D2C" stroke-width="3"/>
+
+        <g id="mapLabels"></g>
+      </svg>
+      <ul class="legend" aria-label="Leyenda de estado">
+        <li><span class="sw sw-ok"></span>Óptima</li>
+        <li><span class="sw sw-high"></span>Alerta alta</li>
+        <li><span class="sw sw-low"></span>Alerta baja</li>
+      </ul>
+    </figure>
+  </div>
+</section>
+
+<!-- ============ ÁREA Y PROBLEMA ============ -->
+<section class="section" id="problema">
+  <div class="container">
+    <h2 class="section-title">Área de aplicación</h2>
+    <div class="two-col">
+      <p class="prose">
+        El área de aplicación es el bienestar animal y la gestión ambiental de hábitats artificiales para tortugas
+        terrestres en zoológicos y centros de conservación. La solución supervisa un recinto con zonas funcionales
+        diferenciadas (zona soleada, zona de sombra, refugio y zonas intermedias) para determinar si ofrecen
+        microambientes adecuados para la termorregulación y el comportamiento natural de los animales.
+      </p>
+      <aside class="callout">
+        <strong>Alcance de esta fase</strong>
+        <p>IoTurtle es un sistema de monitoreo y apoyo a la toma de decisiones. No controla el hábitat de forma automática.</p>
+      </aside>
+    </div>
+
+    <h2 class="section-title">El problema</h2>
+    <p class="prose">
+      Las tortugas son ectotermas: buena parte de su regulación térmica depende del ambiente. Por eso un recinto
+      no puede describirse con un único promedio: la temperatura, la humedad y la exposición solar cambian al mismo
+      tiempo entre el sol, la sombra, el refugio y el sustrato. Los cuidadores y biólogos no siempre tienen
+      información continua, representativa por zona y verificable para saber si cada zona se mantiene apropiada.
+    </p>
+
+    <div class="problem-types">
+      <article>
+        <svg viewBox="0 0 48 48" aria-hidden="true"><rect x="6" y="6" width="16" height="16" rx="3"/><rect x="26" y="6" width="16" height="16" rx="3"/><rect x="6" y="26" width="16" height="16" rx="3"/><rect x="26" y="26" width="16" height="16" rx="3" class="fill"/></svg>
+        <h3>Espaciales</h3>
+        <p>Diferencias entre zonas que nadie detecta porque solo se mira un valor general.</p>
+      </article>
+      <article>
+        <svg viewBox="0 0 48 48" aria-hidden="true"><path d="M4 32c6 0 6-16 12-16s6 22 12 22 6-26 12-26 4 10 4 10"/></svg>
+        <h3>Temporales</h3>
+        <p>Cambios que ocurren y se revierten sin quedar registrados.</p>
+      </article>
+      <article>
+        <svg viewBox="0 0 48 48" aria-hidden="true"><rect x="10" y="6" width="28" height="36" rx="3"/><path d="M16 16h16M16 23h16M16 30h9"/></svg>
+        <h3>De información</h3>
+        <p>Falta de datos objetivos para sustentar las decisiones de manejo.</p>
+      </article>
+    </div>
+
+    <h3 class="sub-title">Justificación con cifras</h3>
+    <div class="evidence">
+      <article class="ev">
+        <p class="ev-num">5 299</p>
+        <p class="ev-txt">recintos evaluados por la Born Free Foundation en 20 países de la Unión Europea, con deficiencias generalizadas en el manejo ambiental. <a href="#ref1">[1]</a></p>
+      </article>
+      <article class="ev">
+        <p class="ev-num">16</p>
+        <p class="ev-txt">zoológicos de Corea del Sur evaluados con el AWAG modificado en 11 especies: deficiencias recurrentes en el diseño ambiental. <a href="#ref2">[2]</a></p>
+      </article>
+      <article class="ev ev-wide">
+        <p class="ev-txt">En el <strong>ZSL London Zoo</strong>, cambios en el recinto de tortugas gigantes de Galápagos mejoraron de forma comprobada su bienestar <a href="#ref3">[3]</a>. En tortugas chaqueñas (<em>Chelonoidis chilensis</em>) la actividad se concentra en intervalos térmicos específicos <a href="#ref4">[4]</a>: hay que conocer la distribución térmica real, no solo el promedio.</p>
+      </article>
+    </div>
+  </div>
+</section>
+
+<!-- ============ METODOLOGÍA: 9 FASES ============ -->
+<section class="section section-mist" id="metodologia">
+  <div class="container">
+    <h2 class="section-title">Metodología: 9 fases de definición</h2>
+    <p class="prose">Selecciona una fase para ver cómo se definió cada parte de la solución.</p>
+
+    <div class="phases">
+      <div class="phase-tabs" role="tablist" aria-label="Fases de la metodología">
+        <button role="tab" aria-selected="true"  aria-controls="f1" id="t1"><b>1</b>Problema</button>
+        <button role="tab" aria-selected="false" aria-controls="f2" id="t2" tabindex="-1"><b>2</b>Requerimientos</button>
+        <button role="tab" aria-selected="false" aria-controls="f3" id="t3" tabindex="-1"><b>3</b>Entidades</button>
+        <button role="tab" aria-selected="false" aria-controls="f4" id="t4" tabindex="-1"><b>4</b>Servicios</button>
+        <button role="tab" aria-selected="false" aria-controls="f5" id="t5" tabindex="-1"><b>5</b>Eventos</button>
+        <button role="tab" aria-selected="false" aria-controls="f6" id="t6" tabindex="-1"><b>6</b>Arquitectura</button>
+        <button role="tab" aria-selected="false" aria-controls="f7" id="t7" tabindex="-1"><b>7</b>Protocolos</button>
+        <button role="tab" aria-selected="false" aria-controls="f8" id="t8" tabindex="-1"><b>8</b>Almacenamiento</button>
+        <button role="tab" aria-selected="false" aria-controls="f9" id="t9" tabindex="-1"><b>9</b>Interfaz</button>
+      </div>
+
+      <div class="phase-panels">
+        <!-- Fase 1 -->
+        <div class="phase-panel" role="tabpanel" id="f1" aria-labelledby="t1">
+          <h3>Fase 1 · Descripción del problema</h3>
+          <p>Los responsables del manejo de las tortugas no disponen de información continua, espacialmente representativa y verificable sobre si cada zona del recinto mantiene condiciones apropiadas para la especie a lo largo del tiempo. Esa carencia produce problemas espaciales, temporales y de información.</p>
+          <a class="text-link" href="#problema">Ver el problema y las cifras</a>
+        </div>
+
+        <!-- Fase 2 -->
+        <div class="phase-panel" role="tabpanel" id="f2" aria-labelledby="t2" hidden>
+          <h3>Fase 2 · Requerimientos</h3>
+          <p>El usuario principal es el <strong>Wildlife Caretaker</strong> (cuidador de fauna). Lo que pide al sistema:</p>
+          <ul class="check-list">
+            <li>Conocer la distribución espacial de las condiciones ambientales dentro del recinto.</li>
+            <li>Conocer la evolución temporal de esas condiciones.</li>
+            <li>Obtener información objetiva y verificable, no solo apreciación visual.</li>
+            <li>Identificar las condiciones relevantes para la especie (rangos térmicos y de humedad).</li>
+          </ul>
+          <p>De ahí salen las características del sistema: monitoreo distribuido por zonas, registro histórico y comparación frente a criterios definidos por un especialista.</p>
+        </div>
+
+        <!-- Fase 3 -->
+        <div class="phase-panel" role="tabpanel" id="f3" aria-labelledby="t3" hidden>
+          <h3>Fase 3 · Entidades</h3>
+          <p>Variables que el sistema mide en cada zona, con nombre único, tipo y rango.</p>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Variable</th><th>Tipo</th><th>Rango / unidad</th></tr></thead>
+              <tbody>
+                <tr><td>Temperatura ambiental</td><td>Numérica</td><td>-40 a 125 °C (rango de sensor; operación esperada 0–50 °C)</td></tr>
+                <tr><td>Humedad relativa</td><td>Numérica</td><td>0 a 100 %HR</td></tr>
+                <tr><td>Temperatura de sustrato / contacto</td><td>Numérica</td><td>-55 a 125 °C</td></tr>
+                <tr><td>Temperatura superficial sin contacto</td><td>Numérica</td><td>-70 a 380 °C (objeto), resolución 0.02 °C</td></tr>
+                <tr><td>Zona del recinto</td><td>Texto</td><td>Soleada, Sombra, Refugio, Intermedia</td></tr>
+                <tr><td>Estado de la zona</td><td>Booleana / texto</td><td>Óptima, Alerta / Alta, Alerta / Baja</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Fase 4 -->
+        <div class="phase-panel" role="tabpanel" id="f4" aria-labelledby="t4" hidden>
+          <h3>Fase 4 · Servicios</h3>
+          <ul class="service-grid">
+            <li>Monitorear las condiciones ambientales del recinto de forma distribuida por zonas.</li>
+            <li>Comparar las condiciones entre las diferentes zonas funcionales.</li>
+            <li>Detectar condiciones fuera de los criterios definidos por el especialista.</li>
+            <li>Conservar un historial ambiental del recinto (series de tiempo).</li>
+            <li>Apoyar la toma de decisiones de cuidadores, biólogos y veterinarios.</li>
+            <li>Verificar si el refugio, la sombra y la zona soleada cumplen su función ambiental.</li>
+          </ul>
+        </div>
+
+        <!-- Fase 5 -->
+        <div class="phase-panel" role="tabpanel" id="f5" aria-labelledby="t5" hidden>
+          <h3>Fase 5 · Eventos</h3>
+          <p>Los eventos se ejecutan cuando una variable sale de su rango. En esta fase son alertas; la activación automática de actuadores no está en el alcance base.</p>
+          <div class="alert-sample">
+            <div class="alert-item high"><span class="alert-ico" aria-hidden="true">!</span><div><strong>Temperatura alta en Zona 1 · Soleada</strong><small>31.2 °C supera el límite superior (30.0 °C)</small></div></div>
+            <div class="alert-item low"><span class="alert-ico" aria-hidden="true">!</span><div><strong>Humedad baja en Zona 1 · Soleada</strong><small>58 % está por debajo del límite inferior (60 %)</small></div></div>
+          </div>
+          <a class="text-link" href="dashboard.html">Ver las alertas en el dashboard</a>
+        </div>
+
+        <!-- Fase 6 -->
+        <div class="phase-panel" role="tabpanel" id="f6" aria-labelledby="t6" hidden>
+          <h3>Fase 6 · Arquitectura</h3>
+          <p>Arquitectura de red centralizada: los sensores de cada zona envían sus lecturas a un nodo de adquisición (Raspberry Pi) que concentra, procesa localmente y transmite a una plataforma en la nube.</p>
+          <ol class="flow" aria-label="Flujo de datos">
+            <li><span>Recinto</span><small>Soleada, sombra, refugio, intermedias</small></li>
+            <li><span>Capa de percepción</span><small>SHT31, MLX90614, DS18B20</small></li>
+            <li><span>Nodo IoT</span><small>Raspberry Pi: adquisición y procesamiento</small></li>
+            <li><span>Comunicación</span><small>Wi-Fi · MQTT / HTTP</small></li>
+            <li><span>Plataforma</span><small>Base de datos histórica y evaluación</small></li>
+            <li><span>Interfaz</span><small>Dashboard, alertas, histórico</small></li>
+            <li><span>Usuarios</span><small>Cuidador, biólogo, veterinario</small></li>
+          </ol>
+        </div>
+
+        <!-- Fase 7 -->
+        <div class="phase-panel" role="tabpanel" id="f7" aria-labelledby="t7" hidden>
+          <h3>Fase 7 · Protocolos</h3>
+          <p>Dos niveles: interconexión física de los sensores y comunicación IoT hacia la nube (HTTP y MQTT sobre TCP/IP, con Wi-Fi).</p>
+          <div class="proto-grid">
+            <div class="table-wrap">
+              <table>
+                <thead><tr><th>Sensor</th><th>Variable</th><th>Interfaz</th></tr></thead>
+                <tbody>
+                  <tr><td>SHT31 / SHT3x</td><td>Temperatura y humedad relativa</td><td>I2C</td></tr>
+                  <tr><td>MLX90614</td><td>Temperatura superficial sin contacto</td><td>I2C</td></tr>
+                  <tr><td>DS18B20</td><td>Temperatura de sustrato / contacto</td><td>1-Wire</td></tr>
+                  <tr><td>Microsoft LifeCam Studio</td><td>Registro visual complementario</td><td>USB</td></tr>
+                </tbody>
+              </table>
+            </div>
+            <figure class="wiring">
+              <svg viewBox="0 0 420 250" role="img" aria-label="Conexión de sensores a la Raspberry Pi: bus I2C a 100 kHz con resistencias pull-up de 4.7 kΩ para SHT3x y MLX90614, y DS18B20 en GPIO4 con pull-up de 4.7 kΩ">
+                <rect x="14" y="70" width="84" height="70" rx="6" class="w-box"/>
+                <text x="56" y="110" class="w-lbl">RPi 4</text>
+                <line x1="98" y1="88" x2="400" y2="88" class="w-bus"/>
+                <line x1="98" y1="104" x2="400" y2="104" class="w-bus sda"/>
+                <text x="104" y="82" class="w-sm">SCL · 100 kHz I2C</text>
+                <text x="104" y="118" class="w-sm">SDA</text>
+                <path d="M170 30v58M195 30v74" class="w-wire"/>
+                <text x="152" y="24" class="w-sm">4.7 kΩ a 3.3 V</text>
+                <rect x="210" y="150" width="90" height="46" rx="5" class="w-box"/>
+                <text x="255" y="178" class="w-lbl sm">MLX90614</text>
+                <path d="M240 88v62M270 104v46" class="w-wire"/>
+                <rect x="320" y="150" width="80" height="46" rx="5" class="w-box"/>
+                <text x="360" y="178" class="w-lbl sm">SHT3x</text>
+                <path d="M345 88v62M375 104v46" class="w-wire"/>
+                <path d="M56 140v50h40" class="w-wire onew"/>
+                <text x="18" y="168" class="w-sm">GPIO4</text>
+                <rect x="96" y="176" width="90" height="40" rx="5" class="w-box"/>
+                <text x="141" y="201" class="w-lbl sm">DS18B20</text>
+                <text x="100" y="232" class="w-sm">1-Wire · pull-up 4.7 kΩ</text>
+              </svg>
+              <figcaption>Conexión de sensores a la Raspberry Pi (esquema simplificado de la Figura 1).</figcaption>
+            </figure>
+          </div>
+        </div>
+
+        <!-- Fase 8 -->
+        <div class="phase-panel" role="tabpanel" id="f8" aria-labelledby="t8" hidden>
+          <h3>Fase 8 · Almacenamiento</h3>
+          <p>Las lecturas se guardan en la nube en una base de datos histórica, preferiblemente como serie de tiempo, para consultar el estado actual, las últimas 24 horas y las tendencias por zona.</p>
+          <div class="db-options">
+            <div><strong>Relacional (SQL)</strong><p>MariaDB</p></div>
+            <div><strong>No relacional (NoSQL)</strong><p>Firebase</p></div>
+          </div>
+          <p class="note">La elección depende de la escala y la frecuencia de escritura del sistema final.</p>
+        </div>
+
+        <!-- Fase 9 -->
+        <div class="phase-panel" role="tabpanel" id="f9" aria-labelledby="t9" hidden>
+          <h3>Fase 9 · Interfaz (HMI)</h3>
+          <p>Un dashboard web tipo panel de control: el cuidador no interactúa con los sensores sino con una representación del estado del recinto.</p>
+          <p class="chips">
+            <span>Vista general</span><span>Mapa del recinto</span><span>Monitoreo en tiempo real</span><span>Histórico</span><span>Análisis</span><span>Alertas</span><span>Reportes</span><span>Dispositivos</span><span>Configuración</span>
+          </p>
+          <a class="text-link" href="dashboard.html">Ir al dashboard</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ AWAG ============ -->
+<section class="section section-mist" id="awag">
+  <div class="container">
+    <h2 class="section-title">¿Qué hace diferente a IoTurtle?</h2>
+    <div class="two-col awag-grid">
+      <div>
+        <p class="prose">
+          Una estación ambiental convencional busca un único valor representativo. IoTurtle conserva la relación entre
+          <strong>variable, zona, tiempo y criterio biológico</strong>, y se apoya en el Animal Welfare Assessment Grid
+          (AWAG), que valora el bienestar en cuatro cuadrantes: condición clínica, desviaciones conductuales, eventos
+          procedimentales/clínicos y calidad del ambiente.
+        </p>
+        <h3 class="sub-title">Indicadores que alimentan la calidad del ambiente</h3>
+        <ul class="check-list">
+          <li>Disponibilidad de gradiente térmico entre zonas.</li>
+          <li>Porcentaje de tiempo dentro del rango óptimo de la especie.</li>
+          <li>Porcentaje de zonas del recinto dentro de los criterios.</li>
+          <li>Duración de las condiciones extremas registradas.</li>
+          <li>Variabilidad térmica dentro de cada zona.</li>
+          <li>Diferencias de condición entre zonas del mismo recinto.</li>
+        </ul>
+      </div>
+      <figure class="awag-fig">
+        <svg viewBox="0 0 360 340" role="img" aria-label="Diagrama AWAG con cuatro ejes: físico, psicológico, ambiente y eventos procedimentales. IoTurtle alimenta el cuadrante de calidad del ambiente.">
+          <rect x="30" y="178" width="150" height="140" class="awag-q"/>
+          <line x1="180" y1="30" x2="180" y2="318" class="awag-axis"/>
+          <line x1="30" y1="178" x2="330" y2="178" class="awag-axis"/>
+          <polygon points="180,70 206,178 180,226 94,178" class="awag-poly"/>
+          <text x="180" y="22" class="awag-t">Físico</text>
+          <text x="330" y="170" class="awag-t end">Psicológico</text>
+          <text x="180" y="336" class="awag-t">Ambiente</text>
+          <text x="30" y="170" class="awag-t start">Eventos</text>
+          <text x="190" y="60" class="awag-s start">Condición clínica</text>
+          <text x="190" y="200" class="awag-s start">Desviaciones conductuales</text>
+          <text x="40" y="60" class="awag-s start">Eventos procedimentales</text>
+          <text x="40" y="300" class="awag-s start strong">Calidad del ambiente</text>
+          <text x="40" y="314" class="awag-s start strong">← datos de IoTurtle</text>
+        </svg>
+        <figcaption>AWAG como referencia para el cuadrante «Quality of the environment».</figcaption>
+      </figure>
+    </div>
+  </div>
+</section>
+
+<!-- ============ IMPLEMENTACIÓN ============ -->
+<section class="section" id="implementacion">
+  <div class="container">
+    <h2 class="section-title">Evidencia de implementación: capa de percepción</h2>
+    <p class="prose">
+      La adquisición de los tres sensores se implementó en un único script de Python sobre una Raspberry Pi.
+      Cada lectura se valida antes de convertirse a unidades físicas, y las tres se imprimen en la terminal cada
+      segundo (<code>READ_INTERVAL = 1.0</code>) para verificar en campo el funcionamiento simultáneo antes de
+      conectar la etapa de comunicación IoT.
+    </p>
+
+    <div class="sensors">
+      <article class="sensor">
+        <h3>SHT31</h3>
+        <p>Temperatura y humedad relativa por I2C con comandos single-shot. Cada trama se valida con CRC-8.</p>
+      </article>
+      <article class="sensor">
+        <h3>MLX90614</h3>
+        <p>Temperatura superficial sin contacto por I2C. Se verifica el bit de error 0x8000 del registro.</p>
+      </article>
+      <article class="sensor">
+        <h3>DS18B20</h3>
+        <p>Temperatura de sustrato por 1-Wire. Se valida el indicador CRC «YES» del driver del kernel.</p>
+      </article>
+    </div>
+
+    <div class="code-tabs">
+      <div class="code-tablist" role="tablist" aria-label="Fragmentos de código">
+        <button role="tab" aria-selected="true" aria-controls="c1" id="ct1">DS18B20</button>
+        <button role="tab" aria-selected="false" aria-controls="c2" id="ct2" tabindex="-1">SHT31</button>
+        <button role="tab" aria-selected="false" aria-controls="c3" id="ct3" tabindex="-1">MLX90614</button>
+        <button class="copy-btn" id="copyBtn" type="button">Copiar</button>
+      </div>
+<pre role="tabpanel" id="c1" aria-labelledby="ct1"><code><span class="k">def</span> <span class="f">readDS18B20</span>(sensorPath):
+    dataFile = sensorPath / <span class="s">"w1_slave"</span>
+    <span class="k">with</span> open(dataFile, <span class="s">"r"</span>) <span class="k">as</span> file:
+        lines = file.readlines()
+    <span class="k">if not</span> lines[<span class="n">0</span>].strip().endswith(<span class="s">"YES"</span>):
+        <span class="k">raise</span> RuntimeError(<span class="s">"CRC incorrecto en DS18B20"</span>)
+    temperaturePosition = lines[<span class="n">1</span>].find(<span class="s">"t="</span>)
+    rawTemperature = lines[<span class="n">1</span>][temperaturePosition + <span class="n">2</span>:]
+    <span class="k">return</span> float(rawTemperature) / <span class="n">1000.0</span></code></pre>
+<pre role="tabpanel" id="c2" aria-labelledby="ct2" hidden><code><span class="k">if</span> calculateSHT3xCrc(data[<span class="n">0</span>:<span class="n">2</span>]) != data[<span class="n">2</span>]:
+    <span class="k">raise</span> RuntimeError(<span class="s">"CRC incorrecto en temperatura SHT3x"</span>)
+rawTemperature = (data[<span class="n">0</span>] &lt;&lt; <span class="n">8</span>) | data[<span class="n">1</span>]
+temperature = <span class="n">-45</span> + (<span class="n">175</span> * rawTemperature / <span class="n">65535</span>)
+humidity = <span class="n">100</span> * rawHumidity / <span class="n">65535</span></code></pre>
+<pre role="tabpanel" id="c3" aria-labelledby="ct3" hidden><code><span class="c"># Lectura por I2C con bus.read_word_data() y verificación del bit de error</span>
+raw = bus.read_word_data(MLX_ADDRESS, OBJECT_TEMP_REGISTER)
+<span class="k">if</span> raw &amp; <span class="n">0x8000</span>:
+    <span class="k">raise</span> RuntimeError(<span class="s">"Bit de error activo en MLX90614"</span>)
+temperature = raw * <span class="n">0.02</span> - <span class="n">273.15</span></code></pre>
+    </div>
+  </div>
+</section>
+
+<!-- ============ ANTECEDENTES ============ -->
+<section class="section section-mist" id="antecedentes">
+  <div class="container">
+    <h2 class="section-title">Revisión de antecedentes</h2>
+    <p class="prose">Cinco antecedentes que cubren el bienestar y diseño de recintos, la medición ambiental distribuida y la arquitectura IoT aplicada a hábitats de animales.</p>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Antecedente</th><th>Aporte principal</th><th>Diferencia frente a IoTurtle</th></tr></thead>
+        <tbody>
+          <tr><td>EU Zoo Inquiry 2011 (5 299 recintos, 20 países) <a href="#ref1">[1]</a></td><td>Evidencia estadística de deficiencias ambientales en recintos zoológicos.</td><td>No propone un sistema de monitoreo; es un estudio diagnóstico manual, no continuo.</td></tr>
+          <tr><td>Evaluación AWAG modificado en 16 zoológicos de Corea del Sur <a href="#ref2">[2]</a></td><td>Metodología de evaluación de bienestar con componente ambiental.</td><td>Evaluación puntual y manual; IoTurtle automatiza la captura continua de datos que alimentan ese componente.</td></tr>
+          <tr><td>Rediseño de recinto en tortugas gigantes de Galápagos, ZSL London Zoo <a href="#ref3">[3]</a></td><td>Demuestra que el diseño del recinto afecta el comportamiento y bienestar.</td><td>No incluye sensores ni monitoreo digital; el cambio se evalúa de forma observacional.</td></tr>
+          <tr><td>Biología térmica de <em>Chelonoidis chilensis</em> <a href="#ref4">[4]</a></td><td>Usa registradores de temperatura por cuadrante y los relaciona con la actividad.</td><td>Mide solo temperatura con registradores aislados, sin dashboard ni alertas en tiempo real.</td></tr>
+          <tr><td>Framework IoT para bienestar en instalaciones pecuarias <a href="#ref5">[5]</a></td><td>Arquitectura IoT de adquisición distribuida, transmisión y dashboard para bienestar animal.</td><td>Aplicado a ganadería, no a fauna silvestre; IoTurtle adapta esa arquitectura a tortugas y a criterios de gradiente térmico de reptiles.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- ============ CONCLUSIÓN Y EQUIPO ============ -->
+<section class="section" id="equipo">
+  <div class="container">
+    <h2 class="section-title">Conclusión</h2>
+    <p class="prose">
+      IoTurtle responde a una necesidad concreta y documentada: determinar de manera continua si un recinto de
+      tortugas terrestres ofrece microambientes apropiados en sus distintas zonas y a lo largo del tiempo. Siguiendo
+      la metodología de 9 fases se definieron el problema, los requerimientos, las variables, los servicios y eventos,
+      una arquitectura centralizada en Raspberry Pi, los protocolos (I2C, 1-Wire, MQTT/HTTP), el almacenamiento
+      histórico y un boceto de interfaz. La capa de percepción ya lee y valida los tres sensores.
+    </p>
+
+    <h2 class="section-title">Equipo IoTurtle</h2>
+    <ul class="team">
+      <li><span class="avatar" aria-hidden="true">JG</span><div><strong>Juan Felipe Guerrero</strong><small>Ingeniería, PUJ</small></div></li>
+      <li><span class="avatar" aria-hidden="true">NC</span><div><strong>Nicolas Orlando Cortes</strong><small>Ingeniería, PUJ</small></div></li>
+      <li><span class="avatar" aria-hidden="true">AF</span><div><strong>Alejandro Farfan</strong><small>Ingeniería, PUJ</small></div></li>
+    </ul>
+
+    <details class="refs">
+      <summary>Referencias</summary>
+      <ol>
+        <li id="ref1">Born Free Foundation, "The EU Zoo Inquiry 2011: An Evaluation of the Implementation and Enforcement of EC Directive 1999/22, Relating to the Keeping of Animals in Zoos—Report Findings and Recommendations," ENDCAP, mar. 2012.</li>
+        <li id="ref2">S.-A. Ma, H.-J. Kang, K. Lee, S.-A. Kim, and J. S. Han, "Animal Welfare Assessment in 16 Zoos in South Korea Using the Modified Animal Welfare Assessment Grid," <em>Frontiers in Veterinary Science</em>, vol. 9, art. 860741, abr. 2022, doi: 10.3389/fvets.2022.860741.</li>
+        <li id="ref3">L. Fieschi-Méric, C. Ellis, F. Servini, B. Tapley, and C. J. Michaels, "An Improvement in Enclosure Design Can Positively Impact Welfare, Reduce Aggressiveness and Stabilise Hierarchy in Captive Galapagos Giant Tortoises," <em>Journal of Zoological and Botanical Gardens</em>, vol. 3, no. 4, pp. 499–512, 2022, doi: 10.3390/jzbg3040037.</li>
+        <li id="ref4">C. Buteler, M. C. Labaque, and G. C. Leynaud, "Thermal Biology of Zoo-Housed Chelonoidis chilensis: Determining the Activity Pattern and Estimating Selected and Critical Maximum Temperature," <em>Herpetological Conservation and Biology</em>, vol. 17, no. 1, pp. 111–121, abr. 2022.</li>
+        <li id="ref5">G. Provolo, C. Brandolese, M. Grotto, A. Marinucci, N. Fossati, O. Ferrari, E. Beretta, and E. Riva, "An Internet of Things Framework for Monitoring Environmental Conditions in Livestock Housing to Improve Animal Welfare and Assess Environmental Impact," <em>Animals</em>, vol. 15, no. 5, art. 644, 2025, doi: 10.3390/ani15050644.</li>
+        <li id="ref6">Sensirion AG, "SHT31-DIS-B — Digital Humidity and Temperature Sensor," hoja de datos SHT3x-DIS.</li>
+        <li id="ref7">Analog Devices, "DS18B20 Programmable Resolution 1-Wire Digital Thermometer," hoja de datos.</li>
+        <li id="ref8">Melexis, "MLX90614 Single and Dual Zone IR Sensor in TO39," hoja de datos, rev. 021.</li>
+      </ol>
+    </details>
+  </div>
+</section>
+
+</main>
+
+<!-- ============ PIE ============ -->
+<footer class="footer">
+  <svg class="wave wave-bottom" viewBox="0 0 1440 200" preserveAspectRatio="none" aria-hidden="true">
+    <path d="M0 40c300 90 700 110 1040 70 170-20 300-60 400-110v200H0z" fill="#7FA877"/>
+    <path d="M0 90c320 70 720 80 1060 40 150-18 280-50 380-90v160H0z" fill="#1B6B3A"/>
+    <path d="M0 120c360 50 760 50 1100 20 130-12 250-34 340-60v120H0z" fill="#0E4E7E"/>
+  </svg>
+  <div class="footer-inner">
+    <p><strong>IoTurtle</strong> · IoT: Fundamentos y aplicaciones · Pontificia Universidad Javeriana, Bogotá · 2026</p>
+    <p class="ai-note">Declaración de uso de IA: se usaron ChatGPT (OpenAI), Claude (Anthropic) y NotebookLM como apoyo en redacción, estructuración y síntesis bibliográfica. El equipo revisó y asume la responsabilidad del contenido.</p>
+  </div>
+</footer>
+
+<script src="Js/script.js"></script>
+</body>
+</html>
