@@ -194,7 +194,7 @@ def registro():
 @app.route("/dashboard")
 def dashboard():
     if "usuario" not in session:
-        return redirect("/login?error=sesion")
+        return redirect("/login?error=sapo")
     return render_template("dashboard.html", usuario=session["usuario"])
 
 
