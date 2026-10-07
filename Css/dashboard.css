@@ -192,3 +192,15 @@
   .dash-live.offline .live-dot { background: var(--low); animation: none; }
   .dash-live.offline .live-dot::after { display: none; }
   .kpi strong .kpi-num { font-size: inherit; font-weight: inherit; color: inherit; }
+  
+  /* ---------- Condiciones generales ---------- */
+  .gen-list { list-style: none; margin: 0; padding: 0; display: grid; gap: .6rem; }
+  .gen-list li {
+    display: flex; align-items: center; justify-content: space-between; gap: 1rem;
+    padding: .8rem 1rem; border-radius: var(--radius-sm);
+    background: var(--mist); border-left: 4px solid var(--line);
+  }
+  .gen-list li.ok  { border-color: var(--ok); }
+  .gen-list li.low { border-color: var(--low); background: #FCF1E1; }
+  .gen-list span { color: var(--muted); }
+  .gen-list strong { font: 600 1.2rem var(--font-head); color: var(--navy); white-space: nowrap; }

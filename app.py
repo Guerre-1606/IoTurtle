@@ -81,11 +81,16 @@ def ultimas_lecturas(cantidad=20):
         conexion.close()
 
 ZONAS = [
-    {"nombre": "Soleada",      "temp": "field1", "hum": "field6"},
-    {"nombre": "Sombra",       "temp": "field2", "hum": "field7"},
-    {"nombre": "Refugio",      "temp": "field3", "hum": None},
-    {"nombre": "Intermedia 1", "temp": "field4", "hum": None},
-    {"nombre": "Intermedia 2", "temp": "field5", "hum": None},
+    {"nombre": "Recinto",    "field": "field1"},
+    {"nombre": "Soleada",    "field": "field2"},
+    {"nombre": "Intermedia", "field": "field3"},
+    {"nombre": "Sombra",     "field": "field4"},
+]
+
+GENERALES = [
+    {"nombre": "Humedad relativa",      "field": "field5", "unidad": "%"},
+    {"nombre": "Temperatura del suelo", "field": "field6", "unidad": "°C"},
+    {"nombre": "Temperatura ambiente",  "field": "field7", "unidad": "°C"},
 ]
 
 CRITERIOS = {"tmax": 30.0, "tmin": 20.0, "hmin": 60.0}
@@ -96,8 +101,7 @@ def numero(valor):
 
 
 def evaluar_zona(zona, lectura):
-    t = numero(lectura.get(zona["temp"])) if zona["temp"] else None
-    h = numero(lectura.get(zona["hum"])) if zona["hum"] else None
+    t = numero(lectura.get(zona["field"]))
 
     alertas = []
     if t is not None and t > CRITERIOS["tmax"]:
@@ -106,20 +110,30 @@ def evaluar_zona(zona, lectura):
     if t is not None and t < CRITERIOS["tmin"]:
         alertas.append({"tipo": "low", "titulo": f"Temperatura baja · {zona['nombre']}",
                         "detalle": f"{t:.1f} °C bajo {CRITERIOS['tmin']:.1f} °C"})
-    if h is not None and h < CRITERIOS["hmin"]:
-        alertas.append({"tipo": "low", "titulo": f"Humedad baja · {zona['nombre']}",
-                        "detalle": f"{h:.0f} % bajo {CRITERIOS['hmin']:.0f} %"})
 
     if t is None:
         estado = "none"
-    elif any(a["tipo"] == "high" for a in alertas):
-        estado = "high"
     elif alertas:
-        estado = "low"
+        estado = alertas[0]["tipo"]
     else:
         estado = "ok"
 
-    return {"nombre": zona["nombre"], "temp": t, "hum": h, "estado": estado}, alertas
+    return {"nombre": zona["nombre"], "temp": t, "estado": estado}, alertas
+
+
+def evaluar_generales(lectura):
+    generales, alertas = [], []
+    for g in GENERALES:
+        valor = numero(lectura.get(g["field"]))
+        estado = "none" if valor is None else "ok"
+
+        if g["field"] == "field5" and valor is not None and valor < CRITERIOS["hmin"]:
+            estado = "low"
+            alertas.append({"tipo": "low", "titulo": "Humedad baja · Recinto",
+                            "detalle": f"{valor:.0f} % bajo {CRITERIOS['hmin']:.0f} %"})
+
+        generales.append({"nombre": g["nombre"], "valor": valor, "unidad": g["unidad"], "estado": estado})
+    return generales, alertas
 
 @app.route("/")
 def inicio():
@@ -194,7 +208,7 @@ def registro():
 @app.route("/dashboard")
 def dashboard():
     if "usuario" not in session:
-        return redirect("/login?error=sapo")
+        return redirect("/login?error=sesion")
     return render_template("dashboard.html", usuario=session["usuario"])
 
 
@@ -221,7 +235,7 @@ def api_estado():
 
     filas = ultimas_lecturas(1)
     if not filas:
-        return jsonify({"ultima": None, "zonas": [], "alertas": [], "kpis": None})
+        return jsonify({"ultima": None, "zonas": [], "generales": [], "alertas": [], "kpis": None})
     lectura = filas[0]
 
     zonas, alertas = [], []
@@ -229,6 +243,9 @@ def api_estado():
         resultado, alertas_zona = evaluar_zona(zona, lectura)
         zonas.append(resultado)
         alertas.extend(alertas_zona)
+
+    generales, alertas_generales = evaluar_generales(lectura)
+    alertas.extend(alertas_generales)
 
     temperaturas = [z["temp"] for z in zonas if z["temp"] is not None]
     kpis = {
@@ -242,6 +259,7 @@ def api_estado():
         "ultima": lectura["recibido"].strftime("%Y-%m-%dT%H:%M:%SZ"),
         "entry_id": lectura["entry_id"],
         "zonas": zonas,
+        "generales": generales,
         "alertas": alertas,
         "kpis": kpis,
     })

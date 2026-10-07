@@ -73,7 +73,7 @@
   <header class="dash-head">
     <div>
       <h1>Vista general</h1>
-      <p>Recinto de demostración · 5 zonas</p>
+      <p>Recinto de demostración · 4 zonas</p>
     </div>
     <span class="dash-live" id="estadoConexion"><span class="live-dot" aria-hidden="true"></span><span id="estadoTexto">Conectando…</span></span>
   </header>
@@ -103,13 +103,20 @@
       <div class="table-wrap">
         <table class="zone-table">
           <thead>
-            <tr><th>Zona</th><th>Temperatura</th><th>Humedad</th><th>Estado</th></tr>
+            <tr><th>Zona</th><th>Temperatura</th><th>Estado</th></tr>
           </thead>
           <tbody id="zonasBody">
-            <tr><td colspan="4">Cargando lecturas…</td></tr>
+            <tr><td colspan="3">Cargando lecturas…</td></tr>
           </tbody>
         </table>
       </div>
+    </article>
+
+    <article class="panel">
+      <h2>Condiciones generales</h2>
+      <ul class="gen-list" id="generalesLista">
+        <li><span>Cargando…</span></li>
+      </ul>
     </article>
 
     <article class="panel">
@@ -119,9 +126,9 @@
       </ul>
     </article>
 
-    <article class="panel">
+    <article class="panel panel-wide">
       <h2>Temperatura · últimas 24 h</h2>
-      <div class="placeholder">Aquí va la gráfica</div>
+      <div class="placeholder"></div>
     </article>
   </section>
 </main>

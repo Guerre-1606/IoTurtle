@@ -20,7 +20,7 @@
       if (!zonas.length) {
         const tr = document.createElement("tr");
         const td = celda("Todavía no hay lecturas.");
-        td.colSpan = 4;
+        td.colSpan = 3;
         tr.appendChild(td);
         body.appendChild(tr);
         return;
@@ -30,7 +30,6 @@
         const tr = document.createElement("tr");
         tr.appendChild(celda(z.nombre));
         tr.appendChild(celda(z.temp !== null ? `${z.temp.toFixed(1)} °C` : "--"));
-        tr.appendChild(celda(z.hum !== null ? `${Math.round(z.hum)} %` : "--"));
   
         const td = document.createElement("td");
         const pill = document.createElement("span");
@@ -40,6 +39,23 @@
         tr.appendChild(td);
   
         body.appendChild(tr);
+      });
+    }
+  
+    function pintarGenerales(generales) {
+      const lista = $("generalesLista");
+      lista.replaceChildren();
+  
+      generales.forEach(g => {
+        const li = document.createElement("li");
+        li.className = g.estado;
+        const nombre = document.createElement("span");
+        nombre.textContent = g.nombre;
+        const valor = document.createElement("strong");
+        if (g.valor === null) valor.textContent = "--";
+        else valor.textContent = g.unidad === "%" ? `${Math.round(g.valor)} %` : `${g.valor.toFixed(1)} ${g.unidad}`;
+        li.append(nombre, valor);
+        lista.appendChild(li);
       });
     }
   
@@ -107,6 +123,7 @@
         ultimaHora = datos.ultima ? new Date(datos.ultima) : null;
   
         pintarZonas(datos.zonas);
+        pintarGenerales(datos.generales);
         pintarAlertas(datos.alertas, ultimaHora);
         pintarKpis(datos.kpis);
         pintarHace();
