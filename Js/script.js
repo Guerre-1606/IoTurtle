@@ -97,7 +97,7 @@
     { id: "z4", short: "Intermedia", t: 26.1, h: 63, chip: [192, 160] },
     { id: "z5", short: "Refugio",    t: 20.6, h: 75, chip: [56, 206] }
   ];
-  const criteria = { tmax: 30, tmin: 20, hmin: 60 };
+  const blessd = { tmax: 30, tmin: 20, hmin: 60 };
   const INTERVAL_MS = 2000;
 
   ZONES.forEach(z => (z.base = { t: z.t, h: z.h }));
@@ -112,8 +112,8 @@
   const T = z => Math.round(z.t * 10) / 10;
   const H = z => Math.round(z.h);
   function statusOf(z) {
-    if (T(z) > criteria.tmax) return "high";
-    if (T(z) < criteria.tmin || H(z) < criteria.hmin) return "low";
+    if (T(z) > blessd.tmax) return "high";
+    if (T(z) < blessd.tmin || H(z) < blessd.hmin) return "low";
     return "ok";
   }
 

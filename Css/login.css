@@ -131,11 +131,17 @@
 .pass-wrap { position: relative; display: block; }
 .pass-wrap input { padding-right: 4rem; }
 .pass-toggle {
-  position: absolute; right: .4rem; top: 50%; transform: translateY(-50%);
+  position: absolute; right: .35rem; top: 50%; transform: translateY(-50%);
+  display: grid; place-items: center;
+  width: 2.25rem; height: 2.25rem;
   border: 0; background: transparent; color: var(--forest);
-  font: 600 .85rem var(--font-head); padding: .35rem .5rem; cursor: pointer; border-radius: 6px;
+  border-radius: 8px; cursor: pointer;
 }
 .pass-toggle:hover { background: var(--mist); }
+.pass-toggle svg { width: 18px; height: 18px; }
+.pass-toggle .icon-ocultar { display: none; }
+.pass-toggle[aria-pressed="true"] .icon-ver { display: none; }
+.pass-toggle[aria-pressed="true"] .icon-ocultar { display: block; }
 
 .auth-submit { width: 100%; margin-top: .25rem; border: 2px solid var(--forest); cursor: pointer; }
 .auth-submit[disabled] { opacity: .7; cursor: wait; }

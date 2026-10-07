@@ -101,6 +101,12 @@ def archivos(carpeta, archivo):
         abort(404)
     return send_from_directory(os.path.join(BASE, carpeta), archivo)
 
+@app.route("/dashboard")
+def dashboard():
+    if "usuario" not in session:
+        return redirect("/login?error=sesion")
+    return render_template("dashboard.html", usuario=session["usuario"])
+
 
 if __name__ == "__main__":
     app.run(debug=True)

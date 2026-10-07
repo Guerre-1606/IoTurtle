@@ -7,7 +7,6 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@400;500;600;700&family=Source+Sans+3:wght@400;600;700&display=swap" rel="stylesheet">
-  <!-- Primero los estilos compartidos, después los del login -->
   <link rel="stylesheet" href="/Css/style.css">
   <link rel="stylesheet" href="/Css/login.css">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🐢</text></svg>">
@@ -45,12 +44,9 @@
       <button role="tab" id="tabRegistro" aria-controls="panelRegistro" aria-selected="false" tabindex="-1">Crear cuenta</button>
     </div>
 
-    <!-- Mensajes que llegan del backend: /login?error=... o ?ok=... -->
     <p class="auth-msg" id="authMsg" role="alert" hidden></p>
 
-    <!-- Botón de Google: lo maneja Flask en /auth/google -->
     <a class="btn-google" href="/auth/google">
-      <!-- Descarga el ícono oficial de Google (guía de marca de Google Sign-In) y guárdalo en IMG/google.svg -->
       <img src="/IMG/google.svg" alt="" width="20" height="20" onerror="this.remove()">
       Continuar con Google
     </a>
@@ -68,7 +64,16 @@
           <span>Contraseña</span>
           <span class="pass-wrap">
             <input type="password" name="contrasena" autocomplete="current-password" required>
-            <button type="button" class="pass-toggle" aria-label="Mostrar contraseña">Ver</button>
+            <button type="button" class="pass-toggle" aria-label="Mostrar contraseña" aria-pressed="false">
+              <svg class="icon-ver" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
+                <path d="M10.5 8a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0"/>
+                <path d="M0 8s3-5.5 8-5.5S16 8 16 8s-3 5.5-8 5.5S0 8 0 8m8 3.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7"/>
+              </svg>
+              <svg class="icon-ocultar" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
+                <path d="m10.79 12.912-1.614-1.615a3.5 3.5 0 0 1-4.474-4.474l-2.06-2.06C.938 6.278 0 8 0 8s3 5.5 8 5.5a7 7 0 0 0 2.79-.588M5.21 3.088A7 7 0 0 1 8 2.5c5 0 8 5.5 8 5.5s-.939 1.721-2.641 3.238l-2.062-2.062a3.5 3.5 0 0 0-4.474-4.474z"/>
+                <path d="M5.525 7.646a2.5 2.5 0 0 0 2.829 2.829zm4.95.708-2.829-2.83a2.5 2.5 0 0 1 2.829 2.829zm3.171 6-12-12 .708-.708 12 12z"/>
+              </svg>
+            </button>
           </span>
         </label>
         <button class="btn btn-primary auth-submit" type="submit">Entrar</button>
@@ -90,7 +95,16 @@
           <span>Contraseña</span>
           <span class="pass-wrap">
             <input type="password" name="contrasena" autocomplete="new-password" minlength="8" required>
-            <button type="button" class="pass-toggle" aria-label="Mostrar contraseña">Ver</button>
+            <button type="button" class="pass-toggle" aria-label="Mostrar contraseña" aria-pressed="false">
+              <svg class="icon-ver" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
+                <path d="M10.5 8a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0"/>
+                <path d="M0 8s3-5.5 8-5.5S16 8 16 8s-3 5.5-8 5.5S0 8 0 8m8 3.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7"/>
+              </svg>
+              <svg class="icon-ocultar" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
+                <path d="m10.79 12.912-1.614-1.615a3.5 3.5 0 0 1-4.474-4.474l-2.06-2.06C.938 6.278 0 8 0 8s3 5.5 8 5.5a7 7 0 0 0 2.79-.588M5.21 3.088A7 7 0 0 1 8 2.5c5 0 8 5.5 8 5.5s-.939 1.721-2.641 3.238l-2.062-2.062a3.5 3.5 0 0 0-4.474-4.474z"/>
+                <path d="M5.525 7.646a2.5 2.5 0 0 0 2.829 2.829zm4.95.708-2.829-2.83a2.5 2.5 0 0 1 2.829 2.829zm3.171 6-12-12 .708-.708 12 12z"/>
+              </svg>
+            </button>
           </span>
           <small class="hint">Mínimo 8 caracteres.</small>
         </label>

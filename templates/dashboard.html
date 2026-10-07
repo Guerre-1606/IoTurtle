@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Dashboard · IoTurtle</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@400;500;600;700&family=Source+Sans+3:wght@400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/Css/style.css">
+  <link rel="stylesheet" href="/Css/dashboard.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🐢</text></svg>">
+</head>
+<body class="dash">
+
+<!-- ============ MENÚ LATERAL ============ -->
+<aside class="sidebar">
+  <a class="side-brand" href="/">
+    <span class="side-logo"><img src="/IMG/Logo.jpeg" alt=""></span>
+    <span class="side-name">IoTurtle</span>
+  </a>
+
+  <nav class="side-nav" aria-label="Dashboard">
+    <a href="#" class="active">
+      <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2 2h5v5H2zM9 2h5v5H9zM2 9h5v5H2zM9 9h5v5H9z"/></svg>
+      <span>Vista general</span>
+    </a>
+    <a href="#">
+      <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M1 3l4.5-1.5 5 1.5L15 1.5v11.5l-4.5 1.5-5-1.5L1 14.5z M5.5 1.5v11.5 M10.5 3v11.5"/></svg>
+      <span>Mapa del recinto</span>
+    </a>
+    <a href="#">
+      <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M1 8h3l2-5 4 10 2-5h3"/></svg>
+      <span>Tiempo real</span>
+    </a>
+    <a href="#">
+      <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 4v4l3 2 M8 15A7 7 0 1 0 8 1a7 7 0 0 0 0 14z"/></svg>
+      <span>Histórico</span>
+    </a>
+    <a href="#">
+      <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 1.5L15 14H1z M8 6v4 M8 12h.01"/></svg>
+      <span>Alertas</span>
+      <b class="side-badge">2</b>
+    </a>
+    <a href="#">
+      <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 1h7l3 3v11H3z M6 8h4 M6 11h4"/></svg>
+      <span>Reportes</span>
+    </a>
+    <a href="#">
+      <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 4h8v8H4z M6 1v3 M10 1v3 M6 12v3 M10 12v3 M1 6h3 M1 10h3 M12 6h3 M12 10h3"/></svg>
+      <span>Dispositivos</span>
+    </a>
+    <a href="#">
+      <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 10.5a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5z M8 1v2 M8 13v2 M1 8h2 M13 8h2 M3 3l1.5 1.5 M11.5 11.5L13 13 M3 13l1.5-1.5 M11.5 4.5L13 3"/></svg>
+      <span>Configuración</span>
+    </a>
+  </nav>
+
+  <div class="side-user">
+    <span class="side-avatar">{{ usuario.nombre[:1] }}</span>
+    <div>
+      <strong>{{ usuario.nombre }}</strong>
+      <small>{{ usuario.rol }}</small>
+    </div>
+    <a class="side-logout" href="/logout" aria-label="Cerrar sesión" title="Cerrar sesión">
+      <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M6 2H2v12h4 M10 4l4 4-4 4 M14 8H6"/></svg>
+    </a>
+  </div>
+</aside>
+
+
+<main class="dash-main">
+  <header class="dash-head">
+    <div>
+      <h1>Resumen</h1>
+      <p>Recinto · 5 zonas</p>
+    </div>
+    <span class="dash-live"><span class="live-dot" aria-hidden="true"></span>En línea</span>
+  </header>
+
+  </section>
+
+</main>
+
+</body>
+</html>
