@@ -184,3 +184,11 @@
     .kpis { grid-template-columns: 1fr 1fr; gap: .6rem; }
     .kpi strong { font-size: 1.35rem; }
   }
+  
+  /* ---------- Estados que pone dashboard.js ---------- */
+  .pill.none { background: var(--mist); color: var(--muted); }
+  .alert-list li.empty { background: var(--mist); border-color: var(--ok); color: var(--muted); }
+  .dash-live.offline { color: var(--muted); }
+  .dash-live.offline .live-dot { background: var(--low); animation: none; }
+  .dash-live.offline .live-dot::after { display: none; }
+  .kpi strong .kpi-num { font-size: inherit; font-weight: inherit; color: inherit; }

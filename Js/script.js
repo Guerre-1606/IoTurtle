@@ -37,7 +37,6 @@
     topbar.classList.toggle("scrolled", window.scrollY > 10);
   }, { passive: true });
 
-  // Solo los enlaces que van a secciones de esta misma página (#problema, #equipo...)
   const navLinks = [...nav.querySelectorAll('a[href^="#"]')];
   const sections = navLinks.map(a => document.querySelector(a.getAttribute("href")));
   if ("IntersectionObserver" in window) {
@@ -76,7 +75,6 @@
   }
   document.querySelectorAll('[role="tablist"]').forEach(setupTabs);
 
-  // Botón copiar código
   const copyBtn = document.getElementById("copyBtn");
   copyBtn.addEventListener("click", async () => {
     const visible = document.querySelector(".code-tabs pre:not([hidden])");

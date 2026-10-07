@@ -40,7 +40,7 @@
     <a href="#">
       <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 1.5L15 14H1z M8 6v4 M8 12h.01"/></svg>
       <span>Alertas</span>
-      <b class="side-badge">2</b>
+      <b class="side-badge" id="badgeAlertas" hidden>0</b>
     </a>
     <a href="#">
       <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 1h7l3 3v11H3z M6 8h4 M6 11h4"/></svg>
@@ -68,19 +68,65 @@
   </div>
 </aside>
 
-
+<!-- ============ CONTENIDO ============ -->
 <main class="dash-main">
   <header class="dash-head">
     <div>
-      <h1>Resumen</h1>
-      <p>Recinto · 5 zonas</p>
+      <h1>Vista general</h1>
+      <p>Recinto de demostración · 5 zonas</p>
     </div>
-    <span class="dash-live"><span class="live-dot" aria-hidden="true"></span>En línea</span>
+    <span class="dash-live" id="estadoConexion"><span class="live-dot" aria-hidden="true"></span><span id="estadoTexto">Conectando…</span></span>
   </header>
 
+  <section class="kpis" aria-label="Resumen">
+    <article class="kpi">
+      <small>Zonas óptimas</small>
+      <strong><span id="kpiOptimas" class="kpi-num">--</span> <span>/ <span id="kpiTotal">--</span></span></strong>
+    </article>
+    <article class="kpi">
+      <small>Alertas activas</small>
+      <strong id="kpiAlertas">--</strong>
+    </article>
+    <article class="kpi">
+      <small>Gradiente térmico</small>
+      <strong><span id="kpiGradiente" class="kpi-num">--</span> <span>°C</span></strong>
+    </article>
+    <article class="kpi">
+      <small>Última lectura</small>
+      <strong id="kpiUltima">--</strong>
+    </article>
   </section>
 
+  <section class="dash-grid">
+    <article class="panel panel-wide">
+      <h2>Zonas del recinto</h2>
+      <div class="table-wrap">
+        <table class="zone-table">
+          <thead>
+            <tr><th>Zona</th><th>Temperatura</th><th>Humedad</th><th>Estado</th></tr>
+          </thead>
+          <tbody id="zonasBody">
+            <tr><td colspan="4">Cargando lecturas…</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </article>
+
+    <article class="panel">
+      <h2>Alertas recientes</h2>
+      <ul class="alert-list" id="alertasLista">
+        <li class="empty">Cargando…</li>
+      </ul>
+    </article>
+
+    <article class="panel">
+      <h2>Temperatura · últimas 24 h</h2>
+      <div class="placeholder">Aquí va la gráfica</div>
+    </article>
+  </section>
 </main>
+
+<script src="/Js/dashboard.js"></script>
 
 </body>
 </html>
