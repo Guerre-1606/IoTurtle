@@ -1,5 +1,10 @@
 flask
-mysql-connector-python
+requests
 python-dotenv
+<<<<<<< HEAD
 requests
 pandas
+=======
+mysql-connector-python
+gunicorn
+>>>>>>> 4009a2d84ce688635d960d34266b72c7e1128a64
