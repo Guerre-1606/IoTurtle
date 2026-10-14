@@ -1,0 +1,175 @@
+{% extends "base_dash.html" %}
+{% block titulo %}Configuración{% endblock %}
+
+{% macro aviso(seccion) %}
+  {% if mensaje and mensaje.seccion == seccion %}
+    <p class="auth-msg {{ 'ok' if mensaje.ok else 'error' }}" role="{{ 'status' if mensaje.ok else 'alert' }}">{{ mensaje.texto }}</p>
+  {% endif %}
+{% endmacro %}
+
+{% block contenido %}
+<header class="dash-head">
+  <div>
+    <h1>Configuración</h1>
+    <p>Tu cuenta, los límites del dashboard y la conexión con ThingSpeak</p>
+  </div>
+</header>
+
+{% if not configurado %}
+  <div class="setup-banner">
+    <div>
+      <strong>Falta un paso para activar el dashboard</strong>
+      <p>Conecta tu canal de ThingSpeak en la sección <a href="#broker">Conexión con ThingSpeak</a>.</p>
+    </div>
+  </div>
+{% endif %}
+
+<nav class="rango-filtro config-nav" aria-label="Secciones">
+  <a href="#perfil">Perfil</a>
+  <a href="#dashboard">Dashboard</a>
+  <a href="#broker">Conexión con ThingSpeak</a>
+</nav>
+
+<!-- ============ PERFIL ============ -->
+<section class="config-section" id="perfil" aria-labelledby="tituloPerfil">
+  <h2 class="config-title" id="tituloPerfil">Perfil</h2>
+  <div class="dash-grid">
+    <article class="panel">
+      <h3>Datos de la cuenta</h3>
+      {{ aviso("perfil") }}
+      <form class="config-form" method="post" action="/dashboard/configuracion">
+        <input type="hidden" name="seccion" value="perfil">
+        <label class="field">
+          <span>Nombre</span>
+          <input type="text" name="nombre" value="{{ perfil.nombre }}" maxlength="120" autocomplete="name" required>
+        </label>
+        <button class="btn-dash" type="submit">Guardar nombre</button>
+      </form>
+      <dl class="info-list config-info">
+        <dt>Correo</dt><dd>{{ perfil.correo }}</dd>
+        <dt>Rol</dt><dd class="capital">{{ perfil.rol }}</dd>
+        <dt>Miembro desde</dt><dd>{{ perfil.creado|hora_local("%d/%m/%Y") if perfil.creado else "--" }}</dd>
+      </dl>
+    </article>
+
+    <article class="panel" id="contrasena">
+      <h3>Cambiar contraseña</h3>
+      {{ aviso("contrasena") }}
+      {% if tiene_contrasena %}
+        <form class="config-form" method="post" action="/dashboard/configuracion">
+          <input type="hidden" name="seccion" value="contrasena">
+          <label class="field">
+            <span>Contraseña actual</span>
+            <input type="password" name="actual" autocomplete="current-password" required>
+          </label>
+          <label class="field">
+            <span>Nueva contraseña</span>
+            <input type="password" name="nueva" minlength="8" autocomplete="new-password" required>
+            <small class="hint">Mínimo 8 caracteres.</small>
+          </label>
+          <label class="field">
+            <span>Confirmar nueva contraseña</span>
+            <input type="password" name="confirmar" minlength="8" autocomplete="new-password" required>
+          </label>
+          <button class="btn-dash" type="submit">Cambiar contraseña</button>
+        </form>
+      {% else %}
+        <p class="muted">Tu cuenta entra con Google, así que no tiene contraseña en IoTurtle.</p>
+      {% endif %}
+    </article>
+  </div>
+</section>
+
+<!-- ============ DASHBOARD ============ -->
+<section class="config-section" id="dashboard" aria-labelledby="tituloDashboard">
+  <h2 class="config-title" id="tituloDashboard">Dashboard</h2>
+  <div class="dash-grid">
+    <article class="panel">
+      <h3>Criterios de la especie</h3>
+      <p class="muted">Límites que usa el dashboard para decidir si una zona está óptima y cuándo crear una alerta.</p>
+      {{ aviso("dashboard") }}
+      <form class="config-form" method="post" action="/dashboard/configuracion">
+        <input type="hidden" name="seccion" value="dashboard">
+        <label class="field">
+          <span>Temperatura máxima (°C)</span>
+          <input type="number" name="tmax" step="0.1" value="{{ criterios.tmax }}" required>
+        </label>
+        <label class="field">
+          <span>Temperatura mínima (°C)</span>
+          <input type="number" name="tmin" step="0.1" value="{{ criterios.tmin }}" required>
+        </label>
+        <label class="field">
+          <span>Humedad mínima (%)</span>
+          <input type="number" name="hmin" step="1" min="0" max="100" value="{{ criterios.hmin }}" required>
+        </label>
+        <button class="btn-dash" type="submit">Guardar criterios</button>
+      </form>
+    </article>
+
+    <article class="panel">
+      <h3>Qué significa cada field</h3>
+      <div class="table-wrap">
+        <table class="zone-table">
+          <thead><tr><th>Field</th><th>Variable</th></tr></thead>
+          <tbody>
+            {% for z in zonas %}<tr><td>{{ z.field }}</td><td>Temperatura · {{ z.nombre }}</td></tr>{% endfor %}
+            {% for gen in generales %}<tr><td>{{ gen.field }}</td><td>{{ gen.nombre }}</td></tr>{% endfor %}
+          </tbody>
+        </table>
+      </div>
+      <p class="chart-note">Tu Raspberry debe enviar los valores en este orden.</p>
+    </article>
+  </div>
+</section>
+
+<!-- ============ BROKER ============ -->
+<section class="config-section" id="broker" aria-labelledby="tituloBroker">
+  <h2 class="config-title" id="tituloBroker">Conexión con ThingSpeak</h2>
+  <div class="dash-grid">
+    <article class="panel">
+      <div class="device-head">
+        <h3>Canal de datos</h3>
+        {% if configurado %}
+          <span class="pill ok">Conectado</span>
+        {% else %}
+          <span class="pill low">Sin configurar</span>
+        {% endif %}
+      </div>
+      {% if configurado and canal_nombre %}
+        <p class="muted">Recibiendo lecturas del canal «{{ canal_nombre }}».</p>
+      {% endif %}
+      {{ aviso("broker") }}
+      <form class="config-form" method="post" action="/dashboard/configuracion">
+        <input type="hidden" name="seccion" value="broker">
+        <label class="field">
+          <span>Channel ID</span>
+          <input type="text" name="canal" value="{{ canal }}" inputmode="numeric" pattern="[0-9]+" autocomplete="off" placeholder="Ej: 3525448" required>
+        </label>
+        <label class="field">
+          <span>Read API Key</span>
+          <input type="password" name="read_key" autocomplete="off" spellcheck="false"
+                 placeholder="Pega aquí la Read API Key" {% if not clave_oculta %}required{% endif %}>
+          {% if clave_oculta %}<small class="hint">Guardada: {{ clave_oculta }}. Déjala vacía para conservarla.</small>{% endif %}
+        </label>
+        <button class="btn-dash" type="submit">Guardar y probar conexión</button>
+      </form>
+      {% if mensaje and mensaje.seccion == "broker" and mensaje.ok %}
+        <a class="panel-link setup-siguiente" href="/dashboard">Ir a la vista general</a>
+      {% endif %}
+    </article>
+
+    <article class="panel">
+      <h3>Dónde encuentro estos datos</h3>
+      <ol class="setup-pasos">
+        <li>Entra a <strong>thingspeak.mathworks.com</strong> y abre tu canal en <strong>Channels → My Channels</strong>.</li>
+        <li>El <strong>Channel ID</strong> aparece debajo del nombre del canal.</li>
+        <li>En la pestaña <strong>API Keys</strong> copia la <strong>Read API Key</strong>.</li>
+      </ol>
+      <p class="chart-note">
+        Al guardar, IoTurtle hace una consulta de prueba a ThingSpeak; solo se guarda si el canal responde.
+        La clave queda en el servidor y nunca se vuelve a mostrar completa.
+      </p>
+    </article>
+  </div>
+</section>
+{% endblock %}

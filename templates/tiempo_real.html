@@ -1,0 +1,53 @@
+{% extends "base_dash.html" %}
+{% block titulo %}Tiempo real{% endblock %}
+
+{% block contenido %}
+<header class="dash-head">
+  <div>
+    <h1>Tiempo real</h1>
+    <p>Últimas 40 lecturas · se actualiza cada 15 s</p>
+  </div>
+  <span class="dash-live" id="estadoConexion"><span class="live-dot" aria-hidden="true"></span><span id="estadoTexto">Conectando…</span></span>
+</header>
+
+<section class="dash-grid" data-rango="live">
+  <article class="panel panel-wide">
+    <h2>Temperatura por zona</h2>
+    <div class="chart-box">
+      <canvas id="graficaZonas" aria-label="Temperatura por zona, últimas lecturas"></canvas>
+      <p class="chart-empty" hidden>Todavía no hay lecturas.</p>
+    </div>
+    <p class="chart-note">Las líneas punteadas son los límites de temperatura configurados.</p>
+  </article>
+
+  <article class="panel">
+    <h2>Humedad relativa</h2>
+    <div class="chart-box chart-box-sm">
+      <canvas id="graficaHumedad" aria-label="Humedad relativa, últimas lecturas"></canvas>
+      <p class="chart-empty" hidden>Todavía no hay lecturas.</p>
+    </div>
+  </article>
+
+  <article class="panel">
+    <h2>Suelo y ambiente</h2>
+    <div class="chart-box chart-box-sm">
+      <canvas id="graficaSuelo" aria-label="Temperatura del suelo y ambiente, últimas lecturas"></canvas>
+      <p class="chart-empty" hidden>Todavía no hay lecturas.</p>
+    </div>
+  </article>
+
+  <article class="panel panel-wide">
+    <details class="data-table">
+      <summary>Ver las lecturas como tabla</summary>
+      <div class="table-wrap" id="tablaLecturas"></div>
+    </details>
+  </article>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script id="seriesConfig" type="application/json">{{ {"zonas": zonas, "generales": generales}|tojson }}</script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js"></script>
+<script src="/Js/graficas.js"></script>
+<script src="/Js/series.js"></script>
+{% endblock %}

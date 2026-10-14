@@ -1,6 +1,7 @@
 (() => {
   "use strict";
 
+  // ---------- Pestañas: Iniciar sesión / Crear cuenta ----------
   const tabs = [...document.querySelectorAll('.auth-tabs [role="tab"]')];
 
   function selectTab(tab) {
@@ -25,10 +26,10 @@
     });
   });
 
-
+  // /login#registro abre directo la pestaña "Crear cuenta"
   if (location.hash === "#registro") selectTab(document.getElementById("tabRegistro"));
 
-
+  // ---------- Mensajes del backend (?error=... o ?ok=...) ----------
   const MENSAJES = {
     credenciales: "Correo o contraseña incorrectos.",
     existe: "Ya hay una cuenta con ese correo. Inicia sesión.",
@@ -37,8 +38,7 @@
     datos: "Revisa los datos del formulario.",
     sesion: "Inicia sesión para entrar al dashboard.",
     registrado: "Cuenta creada. Ya puedes iniciar sesión.",
-    salida: "Cerraste sesión.",
-    sapo: "eche no seas sapo primero incia sesión"
+    salida: "Cerraste sesión."
   };
   const params = new URLSearchParams(location.search);
   const msg = document.getElementById("authMsg");
@@ -55,7 +55,7 @@
       const input = btn.previousElementSibling;
       const mostrar = input.type === "password";
       input.type = mostrar ? "text" : "password";
-      btn.setAttribute("aria-pressed", String(mostrar));
+      btn.textContent = mostrar ? "Ocultar" : "Ver";
       btn.setAttribute("aria-label", mostrar ? "Ocultar contraseña" : "Mostrar contraseña");
     });
   });
@@ -102,6 +102,7 @@
         return;
       }
 
+      // Evita doble clic mientras Flask responde
       const boton = form.querySelector(".auth-submit");
       boton.disabled = true;
       boton.textContent = "Enviando…";

@@ -1,0 +1,76 @@
+{% extends "base_dash.html" %}
+{% block titulo %}Reportes{% endblock %}
+
+{% block contenido %}
+<header class="dash-head">
+  <div>
+    <h1>Reportes</h1>
+    <p>Resumen estadístico · últimas {{ rangos[rango].texto }}</p>
+  </div>
+  <a class="btn-dash" href="/dashboard/reportes.csv?rango={{ rango }}">Descargar CSV</a>
+</header>
+
+<nav class="rango-filtro" aria-label="Rango de tiempo">
+  {% for clave, r in rangos.items() %}
+    <a href="?rango={{ clave }}" {% if clave == rango %}class="active" aria-current="true"{% endif %}>{{ r.texto }}</a>
+  {% endfor %}
+</nav>
+
+<section class="kpis" aria-label="Resumen del periodo">
+  <article class="kpi">
+    <small>Lecturas</small>
+    <strong>{{ reporte.lecturas }}</strong>
+  </article>
+  <article class="kpi">
+    <small>Periodo con datos</small>
+    <strong class="kpi-texto">{{ reporte.desde|hora_local }} – {{ reporte.hasta|hora_local("%I:%M %p") }}</strong>
+  </article>
+  <article class="kpi">
+    <small>Gradiente térmico promedio</small>
+    <strong>{{ reporte.gradiente_promedio|num }} <span>°C</span></strong>
+  </article>
+  <article class="kpi">
+    <small>Gradiente térmico máximo</small>
+    <strong>{{ reporte.gradiente_maximo|num }} <span>°C</span></strong>
+  </article>
+</section>
+
+<section class="dash-grid">
+  <article class="panel panel-wide">
+    <h2>Estadísticas por variable</h2>
+    <div class="table-wrap">
+      <table class="zone-table">
+        <thead>
+          <tr><th>Variable</th><th>Lecturas</th><th>Mínimo</th><th>Promedio</th><th>Máximo</th><th>Desv. estándar</th><th>Tiempo en rango</th></tr>
+        </thead>
+        <tbody>
+          {% for v in reporte.variables %}
+            {% set d = 0 if v.unidad == "%" else 1 %}
+            <tr>
+              <td>{{ v.nombre }}</td>
+              <td>{{ v.lecturas }}</td>
+              <td>{{ v.minimo|num(d) }} {{ v.unidad }}</td>
+              <td>{{ v.promedio|num(d) }} {{ v.unidad }}</td>
+              <td>{{ v.maximo|num(d) }} {{ v.unidad }}</td>
+              <td>{{ v.desviacion|num }}</td>
+              <td>
+                {% if v.en_rango is not none %}
+                  <span class="meter"><span style="width: {{ v.en_rango|round(0) }}%"></span></span>
+                  {{ v.en_rango|num(0) }} %
+                {% else %}
+                  <span class="muted">Sin límite</span>
+                {% endif %}
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    <p class="chart-note">
+      «Tiempo en rango» es el porcentaje de lecturas entre {{ criterios.tmin|num }} y {{ criterios.tmax|num }} °C
+      (o con humedad de al menos {{ criterios.hmin|num(0) }} %). Es uno de los indicadores del cuadrante
+      «Calidad del ambiente» del AWAG.
+    </p>
+  </article>
+</section>
+{% endblock %}

@@ -1,0 +1,28 @@
+{% extends "base_dash.html" %}
+{% block titulo %}{{ titulo }}{% endblock %}
+
+{% block contenido %}
+<header class="dash-head">
+  <div>
+    <h1>{{ titulo }}</h1>
+    <p>Todavía no hay un canal de datos conectado</p>
+  </div>
+</header>
+
+<section class="panel setup">
+  <div class="setup-icon" aria-hidden="true">
+    <svg viewBox="0 0 48 48"><path d="M10 20a20 20 0 0 1 28 0 M16 26a11.5 11.5 0 0 1 16 0"/><circle cx="24" cy="34" r="4"/></svg>
+  </div>
+  <h2>Configura primero tu conexión con ThingSpeak</h2>
+  <p>
+    Para ver esta sección necesitamos saber de qué canal de ThingSpeak vienen las lecturas de tu recinto.
+    Solo tienes que hacerlo una vez.
+  </p>
+  <ol class="setup-pasos">
+    <li>En ThingSpeak abre tu canal y entra a la pestaña <strong>API Keys</strong>.</li>
+    <li>Copia el <strong>Channel ID</strong> y la <strong>Read API Key</strong> (la de lectura, no la de escritura).</li>
+    <li>Pégalos en Configuración, en la sección <strong>Conexión con ThingSpeak</strong>.</li>
+  </ol>
+  <a class="btn-dash" href="/dashboard/configuracion#broker">Ir a configuración</a>
+</section>
+{% endblock %}
