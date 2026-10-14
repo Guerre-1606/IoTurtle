@@ -30,9 +30,7 @@ def conectar():
     return mysql.connector.connect(**DB)
 
 
-# =========================================================
-# Qué significa cada field de ThingSpeak
-# =========================================================
+
 ZONAS = [
     {"nombre": "Recinto",    "field": "field1"},
     {"nombre": "Soleada",    "field": "field2"},
@@ -62,6 +60,14 @@ NOMBRE_FIELD = {z["field"]: z["nombre"] for z in ZONAS + GENERALES}
 
 CRITERIOS_DEFECTO = {"tmax": 30.0, "tmin": 20.0, "hmin": 60.0}
 
+ROLES = {
+    "cuidador": "Cuidador",
+    "biologo": "Biólogo",
+    "veterinario": "Veterinario",
+    "admin": "Administrador",
+}
+ROLES_ELEGIBLES = ["cuidador", "biologo", "veterinario"]
+
 RANGOS = {
     "6h":  {"texto": "6 horas",  "delta": timedelta(hours=6),  "grupo": "5min"},
     "24h": {"texto": "24 horas", "delta": timedelta(hours=24), "grupo": "15min"},
@@ -79,9 +85,7 @@ def ahora_utc():
     return datetime.now(timezone.utc).replace(tzinfo=None)
 
 
-# =========================================================
-# Configuración de cada usuario (canal, clave y límites)
-# =========================================================
+
 def consultar(sql, datos=()):
     conexion = conectar()
     try:
@@ -141,9 +145,6 @@ def obtener_criterios():
             for clave, valor in CRITERIOS_DEFECTO.items()}
 
 
-# =========================================================
-# ThingSpeak → MySQL
-# =========================================================
 THINGSPEAK_URL = "https://api.thingspeak.com/channels/{canal}/feeds.json"
 ultima_sincronizacion = {}
 
@@ -198,9 +199,7 @@ def sincronizar():
         conexion.close()
 
 
-# =========================================================
-# Lecturas desde MySQL (solo las del canal del usuario)
-# =========================================================
+
 def ultimas_lecturas(cantidad=20):
     return consultar("SELECT * FROM lecturas WHERE canal = %s ORDER BY recibido DESC LIMIT %s",
                      (mi_canal(), cantidad))
@@ -228,9 +227,6 @@ def rango_pedido():
     return clave if clave in RANGOS else "24h"
 
 
-# =========================================================
-# Estado actual (vista general, mapa y número de alertas)
-# =========================================================
 def numero(valor):
     return float(valor) if valor is not None else None
 
@@ -309,9 +305,6 @@ def calcular_estado():
     }
 
 
-# =========================================================
-# Cálculos con pandas: alertas por episodios y reportes
-# =========================================================
 def episodios_alerta(df, c):
     if df.empty:
         return []
@@ -408,14 +401,16 @@ def resumen_reporte(df, c):
     }
 
 
-# =========================================================
-# Ayudas para las plantillas
-# =========================================================
 @app.template_filter("hora_local")
 def hora_local(fecha, formato="%d/%m %I:%M %p"):
     if fecha is None:
         return "--"
     return (fecha + HORA_COLOMBIA).strftime(formato).replace("AM", "a. m.").replace("PM", "p. m.")
+
+
+@app.template_filter("rol")
+def nombre_rol(clave):
+    return ROLES.get(clave, clave)
 
 
 @app.template_filter("duracion")
@@ -485,9 +480,7 @@ def pagina(plantilla, nombre, **datos):
                            n_alertas=len(estado["alertas"]), **datos)
 
 
-# =========================================================
-# Portada, login y registro
-# =========================================================
+
 @app.route("/")
 def inicio():
     return render_template("index.html", usuario=session.get("usuario"))
@@ -553,9 +546,7 @@ def registro():
     return redirect("/login?ok=registrado")
 
 
-# =========================================================
-# Páginas del dashboard
-# =========================================================
+
 @app.route("/dashboard")
 @login_requerido
 @config_requerida
@@ -666,7 +657,11 @@ def dispositivos():
 
 
 MENSAJES_CONFIG = {
-    "perfil": {"ok": "Perfil actualizado.", "nombre": "Escribe tu nombre (máximo 120 caracteres)."},
+    "perfil": {
+        "ok": "Perfil actualizado.",
+        "nombre": "Escribe tu nombre (máximo 120 caracteres).",
+        "rol": "Elige un rol de la lista.",
+    },
     "contrasena": {
         "ok": "Contraseña cambiada.",
         "actual": "La contraseña actual no es correcta.",
@@ -692,12 +687,23 @@ def volver(seccion, codigo):
     return redirect(f"/dashboard/configuracion?s={seccion}&{clave}={codigo}#{seccion}")
 
 
+def roles_permitidos():
+    permitidos = list(ROLES_ELEGIBLES)
+    if session["usuario"]["rol"] == "admin":
+        permitidos.append("admin")
+    return permitidos
+
+
 def guardar_perfil():
     nombre = request.form.get("nombre", "").strip()
+    rol = request.form.get("rol", "")
     if not nombre or len(nombre) > 120:
         return volver("perfil", "nombre")
-    ejecutar("UPDATE usuarios SET nombre = %s WHERE id = %s", (nombre, session["usuario"]["id"]))
-    session["usuario"] = {**session["usuario"], "nombre": nombre}
+    if rol not in roles_permitidos():
+        return volver("perfil", "rol")
+
+    ejecutar("UPDATE usuarios SET nombre = %s, rol = %s WHERE id = %s", (nombre, rol, session["usuario"]["id"]))
+    session["usuario"] = {**session["usuario"], "nombre": nombre, "rol": rol}
     return volver("perfil", "ok")
 
 
@@ -780,15 +786,14 @@ def configuracion():
 
     return pagina("configuracion.html", "configuracion",
                   perfil=perfil, tiene_contrasena=bool(perfil["contrasena_hash"]),
+                  roles={clave: ROLES[clave] for clave in roles_permitidos()},
                   criterios=obtener_criterios(), zonas=ZONAS, generales=GENERALES,
                   canal=config.get("canal") or "", canal_nombre=config.get("canal_nombre"),
                   clave_oculta=("•" * 8 + clave[-4:]) if clave else "",
                   mensaje=mensaje)
 
 
-# =========================================================
-# APIs que usa el JavaScript
-# =========================================================
+
 @app.route("/api/estado")
 @login_requerido
 @config_requerida
@@ -824,9 +829,7 @@ def api_serie():
     return jsonify({"rango": clave, "agrupado": grupo, "puntos": puntos, "criterios": obtener_criterios()})
 
 
-# =========================================================
-# Archivos de Css, Js e IMG
-# =========================================================
+
 @app.route("/<carpeta>/<path:archivo>")
 def archivos(carpeta, archivo):
     if carpeta not in ("Css", "Js", "IMG"):

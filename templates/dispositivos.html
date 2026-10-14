@@ -5,36 +5,9 @@
 <header class="dash-head">
   <div>
     <h1>Dispositivos</h1>
-    <p>Estado de cada sensor según la última lectura recibida</p>
+    <p>En Desarrollo Proximamente..... </p>
   </div>
 </header>
 
-<section class="device-grid">
-  {% for s in sensores %}
-    <article class="panel device">
-      <div class="device-head">
-        <h2>{{ s.nombre }}</h2>
-        <span class="pill {{ s.situacion }}">{{ s.texto }}</span>
-      </div>
-      <p>{{ s.funcion }}</p>
-      <dl>
-        <dt>Interfaz</dt><dd>{{ s.interfaz }}</dd>
-        <dt>Variables</dt><dd>{{ s.variables|join(", ") }}</dd>
-      </dl>
-    </article>
-  {% endfor %}
-</section>
 
-<section class="dash-grid">
-  <article class="panel panel-wide">
-    <h2>Canal de datos</h2>
-    <dl class="info-list">
-      <dt>Plataforma</dt><dd>ThingSpeak · canal {{ canal or "--" }}</dd>
-      <dt>Lecturas guardadas en MySQL</dt><dd>{{ totales.n }}</dd>
-      <dt>Primera lectura</dt><dd>{{ totales.primera|hora_local("%d/%m/%Y %I:%M %p") }}</dd>
-      <dt>Última lectura</dt><dd>{{ totales.ultima|hora_local("%d/%m/%Y %I:%M %p") }}</dd>
-    </dl>
-    <p class="chart-note">Un sensor aparece «Activo» si su última lectura tiene menos de 2 minutos y trae todas sus variables.</p>
-  </article>
-</section>
 {% endblock %}

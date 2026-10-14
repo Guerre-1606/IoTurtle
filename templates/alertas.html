@@ -5,73 +5,10 @@
 <header class="dash-head">
   <div>
     <h1>Alertas</h1>
-    <p>Límites: {{ criterios.tmin|num }}–{{ criterios.tmax|num }} °C · humedad mínima {{ criterios.hmin|num(0) }} %</p>
+    <p>En Desarrollo Proximamente..... </p>
   </div>
   <a class="btn-dash btn-dash-ghost" href="/dashboard/configuracion">Cambiar límites</a>
 </header>
 
-<nav class="rango-filtro" aria-label="Rango de tiempo">
-  {% for clave, r in rangos.items() %}
-    <a href="?rango={{ clave }}" {% if clave == rango %}class="active" aria-current="true"{% endif %}>{{ r.texto }}</a>
-  {% endfor %}
-</nav>
 
-<section class="kpis" aria-label="Resumen de alertas">
-  <article class="kpi">
-    <small>Activas ahora</small>
-    <strong {% if actuales %}class="t-high"{% endif %}>{{ actuales|length }}</strong>
-  </article>
-  <article class="kpi">
-    <small>Episodios ({{ rangos[rango].texto }})</small>
-    <strong>{{ resumen.total }}</strong>
-  </article>
-  <article class="kpi">
-    <small>Altas / bajas</small>
-    <strong>{{ resumen.altas }} <span>/ {{ resumen.bajas }}</span></strong>
-  </article>
-  <article class="kpi">
-    <small>Tiempo en alerta (suma de zonas)</small>
-    <strong class="kpi-texto">{{ resumen.tiempo|duracion }}</strong>
-  </article>
-</section>
-
-<section class="dash-grid">
-  <article class="panel panel-wide">
-    <h2>Activas ahora</h2>
-    <ul class="alert-list">
-      {% for a in actuales %}
-        <li class="{{ a.tipo }}"><strong>{{ a.titulo }}</strong><small>{{ a.detalle }}</small></li>
-      {% else %}
-        <li class="empty">Todas las zonas están dentro de sus criterios.</li>
-      {% endfor %}
-    </ul>
-  </article>
-
-  <article class="panel panel-wide">
-    <h2>Historial de episodios</h2>
-    <div class="table-wrap">
-      <table class="zone-table">
-        <thead>
-          <tr><th>Tipo</th><th>Alerta</th><th>Inicio</th><th>Fin</th><th>Duración</th><th>Detalle</th></tr>
-        </thead>
-        <tbody>
-          {% for e in episodios[:100] %}
-            <tr>
-              <td><span class="pill {{ e.tipo }}">{{ "Alta" if e.tipo == "high" else "Baja" }}</span></td>
-              <td>{{ e.titulo }}</td>
-              <td>{{ e.inicio|hora_local }}</td>
-              <td>{{ e.fin|hora_local }}</td>
-              <td>{{ e.duracion|duracion }}</td>
-              <td class="td-wrap">{{ e.detalle }} · {{ e.lecturas }} lecturas</td>
-            </tr>
-          {% else %}
-            <tr><td colspan="6">No hubo alertas en las últimas {{ rangos[rango].texto }}.</td></tr>
-          {% endfor %}
-        </tbody>
-      </table>
-    </div>
-    {% if episodios|length > 100 %}<p class="chart-note">Se muestran los 100 más recientes de {{ episodios|length }}. Descarga el CSV en Reportes para ver todo.</p>{% endif %}
-    <p class="chart-note">Un episodio agrupa las lecturas fuera del límite. Si la variable vuelve al rango menos de 10 minutos, se cuenta como el mismo episodio; si pasan más de 5 minutos sin datos, se corta.</p>
-  </article>
-</section>
 {% endblock %}

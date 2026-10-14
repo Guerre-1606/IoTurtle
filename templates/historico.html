@@ -5,50 +5,11 @@
 <header class="dash-head">
   <div>
     <h1>Histórico</h1>
-    <p>Promedios agrupados por intervalo · últimas {{ rangos[rango].texto }}</p>
+    <p>En Desarrollo Proximamente..... </p>
   </div>
-  <a class="btn-dash" href="/dashboard/reportes.csv?rango={{ rango }}">Descargar CSV</a>
 </header>
 
-<nav class="rango-filtro" aria-label="Rango de tiempo">
-  {% for clave, r in rangos.items() %}
-    <a href="?rango={{ clave }}" {% if clave == rango %}class="active" aria-current="true"{% endif %}>{{ r.texto }}</a>
-  {% endfor %}
-</nav>
 
-<section class="dash-grid" data-rango="{{ rango }}">
-  <article class="panel panel-wide">
-    <h2>Temperatura por zona</h2>
-    <div class="chart-box">
-      <canvas id="graficaZonas" aria-label="Temperatura por zona, histórico"></canvas>
-      <p class="chart-empty" hidden>No hay lecturas en este rango.</p>
-    </div>
-    <p class="chart-note" id="rangoInfo">Las líneas punteadas son los límites de temperatura configurados.</p>
-  </article>
-
-  <article class="panel">
-    <h2>Humedad relativa</h2>
-    <div class="chart-box chart-box-sm">
-      <canvas id="graficaHumedad" aria-label="Humedad relativa, histórico"></canvas>
-      <p class="chart-empty" hidden>No hay lecturas en este rango.</p>
-    </div>
-  </article>
-
-  <article class="panel">
-    <h2>Suelo y ambiente</h2>
-    <div class="chart-box chart-box-sm">
-      <canvas id="graficaSuelo" aria-label="Temperatura del suelo y ambiente, histórico"></canvas>
-      <p class="chart-empty" hidden>No hay lecturas en este rango.</p>
-    </div>
-  </article>
-
-  <article class="panel panel-wide">
-    <details class="data-table">
-      <summary>Ver los promedios como tabla</summary>
-      <div class="table-wrap" id="tablaLecturas"></div>
-    </details>
-  </article>
-</section>
 {% endblock %}
 
 {% block scripts %}

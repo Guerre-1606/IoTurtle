@@ -5,74 +5,11 @@
 <header class="dash-head">
   <div>
     <h1>Mapa del recinto</h1>
-    <p>Estado de cada zona con la última lectura</p>
+    <p><p>En Desarrollo Proximamente..... </p></p>
   </div>
-  <span class="dash-live" id="estadoConexion"><span class="live-dot" aria-hidden="true"></span><span id="estadoTexto">Conectando…</span></span>
 </header>
 
-<section class="dash-grid">
-  <article class="panel panel-wide mapa-panel">
-    <svg class="mapa" viewBox="0 0 640 400" role="img" aria-label="Mapa del recinto con el estado de cada zona">
-      <defs>
-        <pattern id="arena" width="14" height="14" patternUnits="userSpaceOnUse">
-          <circle cx="3" cy="4" r="1" fill="#CDBE98"/>
-          <circle cx="10" cy="10" r="1.2" fill="#D6C8A4"/>
-        </pattern>
-        <radialGradient id="brillo" cx="50%" cy="50%" r="50%">
-          <stop offset="0%" stop-color="#F6D57A" stop-opacity=".85"/>
-          <stop offset="100%" stop-color="#F6D57A" stop-opacity="0"/>
-        </radialGradient>
-      </defs>
 
-      <rect x="10" y="10" width="620" height="380" rx="40" fill="#E7DCC0"/>
-      <rect x="10" y="10" width="620" height="380" rx="40" fill="url(#arena)"/>
-      <rect class="recinto none" data-field="field1" x="10" y="10" width="620" height="380" rx="40"/>
-
-      <ellipse cx="150" cy="170" rx="150" ry="120" fill="url(#brillo)"/>
-      <path class="zone none" data-field="field2" d="M50 110c30-55 180-65 225-15s25 135-40 160-165 20-195-35-20-75 10-110z"/>
-
-      <path class="zone none" data-field="field3" d="M265 230c45-40 145-45 175 5s-5 110-70 120-130-10-140-55 5-45 35-70z"/>
-
-      <path class="zone none" data-field="field4" d="M420 60c80-20 170 15 175 95s-55 125-130 115-95-60-85-125 10-75 40-85z"/>
-      <circle cx="510" cy="140" r="44" fill="#4E7A4A" opacity=".5"/>
-      <circle cx="475" cy="175" r="30" fill="#3F6A3D" opacity=".45"/>
-
-      <g class="map-chip" data-chip="field2" transform="translate(96 78)">
-        <rect width="116" height="70" rx="10"/><circle class="dot" cx="13" cy="15" r="5"/>
-        <text class="name" x="24" y="19">Soleada</text><text class="temp" x="11" y="42">--</text><text class="estado" x="11" y="59">Sin datos</text>
-      </g>
-      <g class="map-chip" data-chip="field3" transform="translate(300 262)">
-        <rect width="116" height="70" rx="10"/><circle class="dot" cx="13" cy="15" r="5"/>
-        <text class="name" x="24" y="19">Intermedia</text><text class="temp" x="11" y="42">--</text><text class="estado" x="11" y="59">Sin datos</text>
-      </g>
-      <g class="map-chip" data-chip="field4" transform="translate(452 210)">
-        <rect width="116" height="70" rx="10"/><circle class="dot" cx="13" cy="15" r="5"/>
-        <text class="name" x="24" y="19">Sombra</text><text class="temp" x="11" y="42">--</text><text class="estado" x="11" y="59">Sin datos</text>
-      </g>
-      <g class="map-chip" data-chip="field1" transform="translate(40 300)">
-        <rect width="116" height="70" rx="10"/><circle class="dot" cx="13" cy="15" r="5"/>
-        <text class="name" x="24" y="19">Recinto</text><text class="temp" x="11" y="42">--</text><text class="estado" x="11" y="59">Sin datos</text>
-      </g>
-    </svg>
-
-    <ul class="legend" aria-label="Leyenda de estado">
-      <li><span class="sw sw-ok"></span>Óptima</li>
-      <li><span class="sw sw-high"></span>Alerta alta</li>
-      <li><span class="sw sw-low"></span>Alerta baja</li>
-    </ul>
-    <p class="chart-note">El borde del recinto muestra el estado de la temperatura general (field1).</p>
-  </article>
-
-  <article class="panel">
-    <h2>Condiciones generales</h2>
-    <ul class="gen-list" id="generalesLista"><li><span>Cargando…</span></li></ul>
-  </article>
-
-  <article class="panel">
-    <h2>Alertas activas</h2>
-    <ul class="alert-list" id="alertasLista"><li class="empty">Cargando…</li></ul>
-  </article>
-</section>
 {% endblock %}
 
 {% block scripts %}

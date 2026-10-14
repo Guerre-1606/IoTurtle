@@ -43,11 +43,19 @@
           <span>Nombre</span>
           <input type="text" name="nombre" value="{{ perfil.nombre }}" maxlength="120" autocomplete="name" required>
         </label>
-        <button class="btn-dash" type="submit">Guardar nombre</button>
+        <label class="field">
+          <span>Rol</span>
+          <select name="rol">
+            {% for clave, texto in roles.items() %}
+              <option value="{{ clave }}" {% if clave == perfil.rol %}selected{% endif %}>{{ texto }}</option>
+            {% endfor %}
+          </select>
+          <small class="hint">Indica tu función en el cuidado de las tortugas.</small>
+        </label>
+        <button class="btn-dash" type="submit">Guardar perfil</button>
       </form>
       <dl class="info-list config-info">
         <dt>Correo</dt><dd>{{ perfil.correo }}</dd>
-        <dt>Rol</dt><dd class="capital">{{ perfil.rol }}</dd>
         <dt>Miembro desde</dt><dd>{{ perfil.creado|hora_local("%d/%m/%Y") if perfil.creado else "--" }}</dd>
       </dl>
     </article>

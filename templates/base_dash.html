@@ -60,7 +60,7 @@
     <span class="side-avatar">{{ usuario.nombre[:1] }}</span>
     <div>
       <strong>{{ usuario.nombre }}</strong>
-      <small>{{ usuario.rol }}</small>
+      <small>{{ usuario.rol|rol }}</small>
     </div>
     <a class="side-logout" href="/logout" aria-label="Cerrar sesión" title="Cerrar sesión">
       <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M6 2H2v12h4 M10 4l4 4-4 4 M14 8H6"/></svg>
