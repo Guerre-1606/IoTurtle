@@ -17,21 +17,35 @@ load_dotenv(os.path.join(BASE, ".env"))
 app = Flask(__name__)
 app.secret_key = os.getenv("SECRET_KEY")
 
-# Valores por defecto pensados para MAMP en local
 DB = {
     "host": os.getenv("DB_HOST", "127.0.0.1"),
     "port": int(os.getenv("DB_PORT", "8889")),
     "user": os.getenv("DB_USER", "root"),
     "password": os.getenv("DB_PASSWORD", "root"),
     "database": os.getenv("DB_NAME", "ioturtle"),
+    "connection_timeout": 10,
 }
+if os.getenv("DB_SSL_CA"):
+    DB["ssl_ca"] = os.getenv("DB_SSL_CA")
+    DB["ssl_verify_cert"] = True
 
 
 def conectar():
-    return mysql.connector.connect(**DB)
+    if "bd" not in g or not g.bd.is_connected():
+        g.bd = mysql.connector.connect(**DB)
+    return g.bd
 
 
-# Mapeo de los fields de ThingSpeak a cada variable del recinto
+@app.teardown_appcontext
+def cerrar_bd(error):
+    bd = g.pop("bd", None)
+    if bd is not None:
+        bd.close()
+
+
+# =========================================================
+# Qué significa cada field de ThingSpeak
+# =========================================================
 ZONAS = [
     {"nombre": "Recinto",    "field": "field1"},
     {"nombre": "Soleada",    "field": "field2"},
@@ -69,7 +83,6 @@ ROLES = {
 }
 ROLES_ELEGIBLES = ["cuidador", "biologo", "veterinario"]
 
-# "grupo" es el intervalo de resample para las gráficas
 RANGOS = {
     "6h":  {"texto": "6 horas",  "delta": timedelta(hours=6),  "grupo": "5min"},
     "24h": {"texto": "24 horas", "delta": timedelta(hours=24), "grupo": "15min"},
@@ -79,36 +92,36 @@ RANGOS = {
 
 HORA_COLOMBIA = timedelta(hours=-5)
 MINUTOS_SIN_DATOS = 2
-CORTE_EPISODIO = timedelta(minutes=5)       # hueco entre lecturas que parte un episodio
-TOLERANCIA_EPISODIO = timedelta(minutes=10)  # episodios más cercanos que esto se fusionan
+CORTE_EPISODIO = timedelta(minutes=5)
+TOLERANCIA_EPISODIO = timedelta(minutes=10)
 
 
-# Todo se guarda en UTC sin tzinfo; la hora local solo se aplica al mostrar
 def ahora_utc():
     return datetime.now(timezone.utc).replace(tzinfo=None)
 
 
+# =========================================================
+# Configuración de cada usuario (canal, clave y límites)
+# =========================================================
 def consultar(sql, datos=()):
-    conexion = conectar()
+    cursor = conectar().cursor(dictionary=True)
     try:
-        cursor = conexion.cursor(dictionary=True)
         cursor.execute(sql, datos)
         return cursor.fetchall()
     finally:
-        conexion.close()
+        cursor.close()
 
 
 def ejecutar(sql, datos=()):
     conexion = conectar()
+    cursor = conexion.cursor()
     try:
-        cursor = conexion.cursor()
         cursor.execute(sql, datos)
         conexion.commit()
     finally:
-        conexion.close()
+        cursor.close()
 
 
-# Se cachea en g para no repetir la consulta dentro de la misma petición
 def mi_config():
     if "config" not in g:
         filas = consultar("SELECT * FROM configuracion_usuario WHERE usuario_id = %s", (session["usuario"]["id"],))
@@ -127,7 +140,6 @@ def mi_canal():
     return mi_config()["canal"]
 
 
-# Upsert; los nombres de columna vienen del código, nunca del usuario
 def guardar_config(**campos):
     usuario_id = session["usuario"]["id"]
     existe = consultar("SELECT usuario_id FROM configuracion_usuario WHERE usuario_id = %s", (usuario_id,))
@@ -149,41 +161,34 @@ def obtener_criterios():
             for clave, valor in CRITERIOS_DEFECTO.items()}
 
 
+# =========================================================
+# ThingSpeak → MySQL
+# =========================================================
 THINGSPEAK_URL = "https://api.thingspeak.com/channels/{canal}/feeds.json"
 ultima_sincronizacion = {}
 
 
-# Devuelve None si el canal o la clave no son válidos
 def pedir_thingspeak(canal, read_key, resultados):
     respuesta = requests.get(THINGSPEAK_URL.format(canal=canal),
-                             params={"api_key": read_key, "results": resultados}, timeout=10)
+                             params={"api_key": read_key, "results": resultados}, timeout=6)
     datos = respuesta.json()
     if not isinstance(datos, dict) or "channel" not in datos:
         return None
     return datos
 
 
-def guardar(envio, cursor, canal):
+def fila_lectura(envio, canal):
     valores = []
     for field in FIELDS:
         v = envio.get(field)
         valores.append(float(v) if v not in (None, "") else None)
-
     recibido = envio["created_at"].replace("T", " ").replace("Z", "")
-
-    # IGNORE evita duplicados al volver a traer lecturas ya guardadas
-    cursor.execute(
-        "INSERT IGNORE INTO lecturas "
-        "(canal, entry_id, recibido, field1, field2, field3, field4, field5, field6, field7) "
-        "VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)",
-        (canal, envio["entry_id"], recibido, *valores),
-    )
+    return (canal, envio["entry_id"], recibido, *valores)
 
 
 def sincronizar():
     c = mi_config()
     canal = c["canal"]
-    # Máximo una consulta a ThingSpeak cada 15 s por canal
     if time.time() - ultima_sincronizacion.get(canal, 0) < 15:
         return
     ultima_sincronizacion[canal] = time.time()
@@ -196,22 +201,33 @@ def sincronizar():
     if not datos:
         return
 
+    ultimo = consultar("SELECT MAX(entry_id) AS ultimo FROM lecturas WHERE canal = %s", (canal,))[0]["ultimo"] or 0
+    nuevas = [fila_lectura(e, canal) for e in datos.get("feeds", []) if e.get("entry_id", 0) > ultimo]
+    if not nuevas:
+        return
+
     conexion = conectar()
+    cursor = conexion.cursor()
     try:
-        cursor = conexion.cursor()
-        for envio in datos.get("feeds", []):
-            guardar(envio, cursor, canal)
+        cursor.executemany(
+            "INSERT IGNORE INTO lecturas "
+            "(canal, entry_id, recibido, field1, field2, field3, field4, field5, field6, field7) "
+            "VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)",
+            nuevas,
+        )
         conexion.commit()
     finally:
-        conexion.close()
+        cursor.close()
 
 
+# =========================================================
+# Lecturas desde MySQL (solo las del canal del usuario)
+# =========================================================
 def ultimas_lecturas(cantidad=20):
     return consultar("SELECT * FROM lecturas WHERE canal = %s ORDER BY recibido DESC LIMIT %s",
                      (mi_canal(), cantidad))
 
 
-# Con "limite" trae las últimas N; con "desde" trae todo a partir de esa fecha
 def lecturas_df(desde=None, limite=None):
     columnas = "entry_id, recibido, " + ", ".join(FIELDS)
     if limite:
@@ -234,6 +250,9 @@ def rango_pedido():
     return clave if clave in RANGOS else "24h"
 
 
+# =========================================================
+# Estado actual (vista general, mapa y número de alertas)
+# =========================================================
 def numero(valor):
     return float(valor) if valor is not None else None
 
@@ -265,7 +284,6 @@ def evaluar_generales(lectura, c):
         valor = numero(lectura.get(g["field"]))
         estado = "none" if valor is None else "ok"
 
-        # Solo la humedad tiene umbral; las demás generales son informativas
         if g["field"] == "field5" and valor is not None and valor < c["hmin"]:
             estado = "low"
             alertas.append({"tipo": "low", "titulo": "Humedad baja · Recinto",
@@ -276,7 +294,6 @@ def evaluar_generales(lectura, c):
     return generales, alertas
 
 
-# Estado actual a partir de la lectura más reciente
 def calcular_estado():
     sincronizar()
     c = obtener_criterios()
@@ -314,7 +331,9 @@ def calcular_estado():
     }
 
 
-# Agrupa lecturas consecutivas fuera de rango en episodios de alerta
+# =========================================================
+# Cálculos con pandas: alertas por episodios y reportes
+# =========================================================
 def episodios_alerta(df, c):
     if df.empty:
         return []
@@ -333,7 +352,6 @@ def episodios_alerta(df, c):
             estado[valores < c["hmin"]] = "low"
         estado[valores.isna()] = "none"
 
-        # Nuevo grupo cada vez que cambia el estado o hay un hueco en los datos
         grupo = ((estado != estado.shift()) | salto).cumsum()
         bloques = []
         for _, bloque in df.groupby(grupo):
@@ -349,7 +367,6 @@ def episodios_alerta(df, c):
                 "lecturas": len(bloque),
             })
 
-        # Une bloques del mismo tipo separados por menos de TOLERANCIA_EPISODIO
         unidos = []
         for bloque in bloques:
             anterior = unidos[-1] if unidos else None
@@ -400,7 +417,6 @@ def resumen_reporte(df, c):
             "en_rango": en_rango.mean() * 100 if en_rango is not None and len(serie) else None,
         })
 
-    # Diferencia entre la zona más caliente y la más fría en cada lectura
     zonas = df[campos_zona]
     gradiente = (zonas.max(axis=1) - zonas.min(axis=1)).dropna()
 
@@ -414,8 +430,9 @@ def resumen_reporte(df, c):
     }
 
 
-# --- Filtros de plantilla ---
-
+# =========================================================
+# Ayudas para las plantillas
+# =========================================================
 @app.template_filter("hora_local")
 def hora_local(fecha, formato="%d/%m %I:%M %p"):
     if fecha is None:
@@ -446,8 +463,6 @@ def formato_numero(valor, decimales=1):
     return f"{valor:.{decimales}f}"
 
 
-# --- Decoradores de acceso ---
-
 def login_requerido(vista):
     @wraps(vista)
     def envoltura(*args, **kwargs):
@@ -459,7 +474,6 @@ def login_requerido(vista):
     return envoltura
 
 
-# endpoint -> (pestaña activa, título), usado por config_requerida
 PAGINAS = {
     "dashboard": ("general", "Vista general"),
     "mapa": ("mapa", "Mapa del recinto"),
@@ -472,7 +486,6 @@ PAGINAS = {
 }
 
 
-# Si el usuario no ha conectado su canal de ThingSpeak, muestra la pantalla de aviso
 def config_requerida(vista):
     @wraps(vista)
     def envoltura(*args, **kwargs):
@@ -488,10 +501,13 @@ def config_requerida(vista):
 
 @app.context_processor
 def datos_globales():
-    return {"configurado": configurado()}
+    try:
+        return {"configurado": configurado()}
+    except Exception as e:
+        print("No se pudo leer la configuración del usuario:", e)
+        return {"configurado": False}
 
 
-# Render común del dashboard; calcula el estado solo si la vista no lo pasó
 def pagina(plantilla, nombre, **datos):
     estado = datos.pop("estado", None)
     if estado is None:
@@ -500,8 +516,9 @@ def pagina(plantilla, nombre, **datos):
                            n_alertas=len(estado["alertas"]), **datos)
 
 
-# --- Autenticación ---
-
+# =========================================================
+# Portada, login y registro
+# =========================================================
 @app.route("/")
 def inicio():
     return render_template("index.html", usuario=session.get("usuario"))
@@ -550,8 +567,8 @@ def registro():
         return redirect("/login?error=datos#registro")
 
     conexion = conectar()
+    cursor = conexion.cursor()
     try:
-        cursor = conexion.cursor()
         cursor.execute("SELECT id FROM usuarios WHERE correo = %s", (correo,))
         if cursor.fetchone():
             return redirect("/login?error=existe")
@@ -562,13 +579,14 @@ def registro():
         )
         conexion.commit()
     finally:
-        conexion.close()
+        cursor.close()
 
     return redirect("/login?ok=registrado")
 
 
-# --- Dashboard ---
-
+# =========================================================
+# Páginas del dashboard
+# =========================================================
 @app.route("/dashboard")
 @login_requerido
 @config_requerida
@@ -641,7 +659,6 @@ def reportes_csv():
     df = df.rename(columns={"entry_id": "Envío", "recibido": "Hora (Colombia)", **NOMBRE_FIELD})
 
     nombre = f"ioturtle_{clave}_{(ahora_utc() + HORA_COLOMBIA):%Y%m%d_%H%M}.csv"
-    # ";" , "," y BOM utf-8 para que Excel en español lo abra bien
     return Response(
         df.to_csv(index=False, sep=";", decimal=",").encode("utf-8-sig"),
         mimetype="text/csv",
@@ -657,7 +674,6 @@ def dispositivos():
     filas = ultimas_lecturas(1)
     ultima = filas[0] if filas else None
 
-    # Un sensor está activo si todos sus fields llegaron en la última lectura y esta es reciente
     sensores = []
     for s in SENSORES:
         if ultima is None:
@@ -680,9 +696,6 @@ def dispositivos():
                   canal=mi_canal(), canal_nombre=mi_config().get("canal_nombre"))
 
 
-# --- Configuración ---
-
-# sección -> código -> mensaje que se muestra tras guardar
 MENSAJES_CONFIG = {
     "perfil": {
         "ok": "Perfil actualizado.",
@@ -714,7 +727,6 @@ def volver(seccion, codigo):
     return redirect(f"/dashboard/configuracion?s={seccion}&{clave}={codigo}#{seccion}")
 
 
-# Solo un admin puede mantener (o asignarse) el rol admin
 def roles_permitidos():
     permitidos = list(ROLES_ELEGIBLES)
     if session["usuario"]["rol"] == "admin":
@@ -754,7 +766,6 @@ def guardar_contrasena():
 
 def guardar_criterios():
     try:
-        # Acepta coma decimal
         nuevos = {clave: float(request.form[clave].replace(",", ".")) for clave in ("tmax", "tmin", "hmin")}
     except (KeyError, ValueError):
         return volver("dashboard", "numero")
@@ -771,14 +782,12 @@ def guardar_broker():
 
     if not canal.isdigit() or len(canal) > 20:
         return volver("broker", "canal")
-    # Clave vacía = conservar la guardada, solo si el canal no cambió
     if not read_key:
         if actual.get("read_key") and actual.get("canal") == canal:
             read_key = actual["read_key"]
         else:
             return volver("broker", "key")
 
-    # Verifica las credenciales contra ThingSpeak antes de guardarlas
     try:
         datos = pedir_thingspeak(canal, read_key, 1)
     except Exception:
@@ -787,7 +796,7 @@ def guardar_broker():
         return volver("broker", "credenciales")
 
     guardar_config(canal=canal, read_key=read_key, canal_nombre=datos["channel"].get("name", "")[:120])
-    ultima_sincronizacion.pop(canal, None)  # fuerza sincronizar en la próxima carga
+    ultima_sincronizacion.pop(canal, None)
     return volver("broker", "ok")
 
 
@@ -824,8 +833,9 @@ def configuracion():
                   mensaje=mensaje)
 
 
-# --- API JSON para las gráficas ---
-
+# =========================================================
+# APIs que usa el JavaScript
+# =========================================================
 @app.route("/api/estado")
 @login_requerido
 @config_requerida
@@ -840,7 +850,6 @@ def api_serie():
     sincronizar()
     clave = request.args.get("rango", "live")
 
-    # "live" = últimas 40 lecturas sin agrupar; los demás rangos se promedian por intervalo
     if clave == "live":
         df = lecturas_df(limite=40)
         grupo = None
@@ -862,7 +871,9 @@ def api_serie():
     return jsonify({"rango": clave, "agrupado": grupo, "puntos": puntos, "criterios": obtener_criterios()})
 
 
-# Archivos estáticos, limitado a estas carpetas
+# =========================================================
+# Archivos de Css, Js e IMG
+# =========================================================
 @app.route("/<carpeta>/<path:archivo>")
 def archivos(carpeta, archivo):
     if carpeta not in ("Css", "Js", "IMG"):
