@@ -37,20 +37,7 @@
     window.addEventListener("scroll", () => {
       topbar.classList.toggle("scrolled", window.scrollY > 10);
     }, { passive: true });
-  
-    // Solo los enlaces que van a secciones de esta misma página (#problema, #equipo...)
-    const navLinks = [...nav.querySelectorAll('a[href^="#"]')];
-    const sections = navLinks.map(a => document.querySelector(a.getAttribute("href")));
-    if ("IntersectionObserver" in window) {
-      const io = new IntersectionObserver(entries => {
-        entries.forEach(e => {
-          if (!e.isIntersecting) return;
-          navLinks.forEach(a => a.classList.toggle("active", a.getAttribute("href") === "#" + e.target.id));
-        });
-      }, { rootMargin: "-45% 0px -50% 0px" });
-      sections.forEach(s => s && io.observe(s));
-    }
-  
+    
     
     function setupTabs(tablist) {
       const tabs = [...tablist.querySelectorAll('[role="tab"]')];
@@ -76,19 +63,6 @@
       });
     }
     document.querySelectorAll('[role="tablist"]').forEach(setupTabs);
-  
-    // Botón copiar código
-    const copyBtn = document.getElementById("copyBtn");
-    copyBtn.addEventListener("click", async () => {
-      const visible = document.querySelector(".code-tabs pre:not([hidden])");
-      try {
-        await navigator.clipboard.writeText(visible.textContent);
-        copyBtn.textContent = "Copiado";
-      } catch {
-        copyBtn.textContent = "No se pudo copiar";
-      }
-      setTimeout(() => (copyBtn.textContent = "Copiar"), 1600);
-    });
   
     
     const ZONES = [
