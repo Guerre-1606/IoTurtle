@@ -438,34 +438,6 @@
       </article>
     </div>
 
-    <div class="code-tabs">
-      <div class="code-tablist" role="tablist" aria-label="Fragmentos de código">
-        <button role="tab" aria-selected="true" aria-controls="c1" id="ct1">DS18B20</button>
-        <button role="tab" aria-selected="false" aria-controls="c2" id="ct2" tabindex="-1">SHT31</button>
-        <button role="tab" aria-selected="false" aria-controls="c3" id="ct3" tabindex="-1">MLX90614</button>
-        <button class="copy-btn" id="copyBtn" type="button">Copiar</button>
-      </div>
-<pre role="tabpanel" id="c1" aria-labelledby="ct1"><code><span class="k">def</span> <span class="f">readDS18B20</span>(sensorPath):
-    dataFile = sensorPath / <span class="s">"w1_slave"</span>
-    <span class="k">with</span> open(dataFile, <span class="s">"r"</span>) <span class="k">as</span> file:
-        lines = file.readlines()
-    <span class="k">if not</span> lines[<span class="n">0</span>].strip().endswith(<span class="s">"YES"</span>):
-        <span class="k">raise</span> RuntimeError(<span class="s">"CRC incorrecto en DS18B20"</span>)
-    temperaturePosition = lines[<span class="n">1</span>].find(<span class="s">"t="</span>)
-    rawTemperature = lines[<span class="n">1</span>][temperaturePosition + <span class="n">2</span>:]
-    <span class="k">return</span> float(rawTemperature) / <span class="n">1000.0</span></code></pre>
-<pre role="tabpanel" id="c2" aria-labelledby="ct2" hidden><code><span class="k">if</span> calculateSHT3xCrc(data[<span class="n">0</span>:<span class="n">2</span>]) != data[<span class="n">2</span>]:
-    <span class="k">raise</span> RuntimeError(<span class="s">"CRC incorrecto en temperatura SHT3x"</span>)
-rawTemperature = (data[<span class="n">0</span>] &lt;&lt; <span class="n">8</span>) | data[<span class="n">1</span>]
-temperature = <span class="n">-45</span> + (<span class="n">175</span> * rawTemperature / <span class="n">65535</span>)
-humidity = <span class="n">100</span> * rawHumidity / <span class="n">65535</span></code></pre>
-<pre role="tabpanel" id="c3" aria-labelledby="ct3" hidden><code><span class="c"># Lectura por I2C con bus.read_word_data() y verificación del bit de error</span>
-raw = bus.read_word_data(MLX_ADDRESS, OBJECT_TEMP_REGISTER)
-<span class="k">if</span> raw &amp; <span class="n">0x8000</span>:
-    <span class="k">raise</span> RuntimeError(<span class="s">"Bit de error activo en MLX90614"</span>)
-temperature = raw * <span class="n">0.02</span> - <span class="n">273.15</span></code></pre>
-    </div>
-  </div>
 </section>
 
 <!-- ============ ANTECEDENTES ============ -->
