@@ -89,10 +89,10 @@
         <label class="field">
           <span>Contraseña</span>
           <span class="pass-wrap">
-            <input type="password" name="contrasena" autocomplete="new-password" minlength="8" required>
+            <input type="password" name="contrasena" autocomplete="new-password" minlength="8" pattern="(?=.*[A-Z])(?=.*[0-9]).{8,}" title="Mínimo 8 caracteres, una mayúscula y un número" required>
             <button type="button" class="pass-toggle" aria-label="Mostrar contraseña">Ver</button>
           </span>
-          <small class="hint">Mínimo 8 caracteres.</small>
+          <small class="hint">Mínimo 8 caracteres, una mayúscula y un número.</small>
         </label>
         <label class="field">
           <span>Confirmar contraseña</span>
@@ -102,7 +102,7 @@
       </form>
     </section>
 
-    <p class="auth-foot">Proyecto académico · 2026</p>
+    <p class="auth-foot">Proyecto académico · Pontificia Universidad Javeriana, 2026</p>
   </div>
 </main>
 

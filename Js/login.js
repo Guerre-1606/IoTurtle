@@ -36,6 +36,7 @@
     google: "No se pudo iniciar sesión con Google. Intenta de nuevo.",
     usa_google: "Esta cuenta se creó con Google. Usa el botón de Google.",
     datos: "Revisa los datos del formulario.",
+    contrasena: "La contraseña debe tener mínimo 8 caracteres, una mayúscula y un número.",
     sesion: "Inicia sesión para entrar al dashboard.",
     registrado: "Cuenta creada. Ya puedes iniciar sesión.",
     salida: "Cerraste sesión."
@@ -92,7 +93,13 @@
       const pass = form.querySelector('input[name="contrasena"]');
       const confirmar = form.querySelector('input[name="confirmar"]');
       if (confirmar) {
-        if (pass.value && pass.value.length < 8) fallo(pass, "Debe tener mínimo 8 caracteres.");
+        if (pass.value) {
+          const faltan = [];
+          if (pass.value.length < 8) faltan.push("8 caracteres");
+          if (!/[A-Z]/.test(pass.value)) faltan.push("una mayúscula");
+          if (!/[0-9]/.test(pass.value)) faltan.push("un número");
+          if (faltan.length) fallo(pass, "Le falta: " + faltan.join(", ") + ".");
+        }
         if (confirmar.value && confirmar.value !== pass.value) fallo(confirmar, "Las contraseñas no coinciden.");
       }
 

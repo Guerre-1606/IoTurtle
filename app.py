@@ -1,4 +1,6 @@
+import math
 import os
+import re
 import time
 from datetime import datetime, timedelta, timezone
 from functools import wraps
@@ -60,15 +62,22 @@ GENERALES = [
 ]
 
 SENSORES = [
-    {"nombre": "Raspberry Pi 4", "funcion": "Nodo de adquisición y envío", "interfaz": "Wi-Fi · MQTT",
-     "fields": ["field1", "field2", "field3", "field4", "field5", "field6", "field7"]},
-    {"nombre": "MLX90614", "funcion": "Temperatura por zona sin contacto", "interfaz": "I2C",
-     "fields": ["field1", "field2", "field3", "field4"]},
+    {"nombre": "Raspberry Pi 4", "funcion": "Nodo de adquisición y envío", "interfaz": "Wi-Fi · MQTT (TLS)",
+     "fields": ["field1", "field5", "field6", "field7"]},
+    {"nombre": "MLX90614", "funcion": "Temperatura superficial sin contacto", "interfaz": "I2C",
+     "fields": ["field1"]},
     {"nombre": "SHT31", "funcion": "Humedad y temperatura ambiente", "interfaz": "I2C",
      "fields": ["field5", "field7"]},
     {"nombre": "DS18B20", "funcion": "Temperatura del suelo", "interfaz": "1-Wire",
      "fields": ["field6"]},
+    {"nombre": "Zonas simuladas", "funcion": "Soleada, Intermedia y Sombra estimadas desde el MLX90614",
+     "interfaz": "Software (app.py)", "fields": ["field2", "field3", "field4"]},
 ]
+
+# Zonas sin sensor: se calculan desde field1 (Recinto) con un desfase fijo
+# y una pequeña variación. Si algún día llega un dato real, se usa el real.
+SIMULAR_ZONAS = os.getenv("SIMULAR_ZONAS", "1") == "1"
+DESFASE_ZONAS = {"field2": 4.0, "field3": 1.5, "field4": -2.0}
 
 FIELDS = [f"field{i}" for i in range(1, 8)]
 NOMBRE_FIELD = {z["field"]: z["nombre"] for z in ZONAS + GENERALES}
@@ -186,6 +195,35 @@ def fila_lectura(envio, canal):
     return (canal, envio["entry_id"], recibido, *valores)
 
 
+def simular_zonas(entry_id, field1, actuales):
+    """Devuelve field2, field3 y field4: los reales si existen o simulados desde field1."""
+    resultado = []
+    for i, (field, desfase) in enumerate(DESFASE_ZONAS.items()):
+        real = actuales[i]
+        if real is not None or field1 is None or not SIMULAR_ZONAS:
+            resultado.append(real)
+            continue
+        variacion = 0.4 * math.sin(entry_id * 0.7 + i * 2.1)
+        resultado.append(round(float(field1) + desfase + variacion, 2))
+    return resultado
+
+
+def rellenar_zonas_viejas(canal):
+    """Simula las zonas en lecturas que ya estaban guardadas sin ellas."""
+    filas = consultar("SELECT id, entry_id, field1 FROM lecturas WHERE canal = %s AND field1 IS NOT NULL "
+                      "AND field2 IS NULL AND field3 IS NULL AND field4 IS NULL LIMIT 1000", (canal,))
+    if not filas:
+        return
+    cambios = [tuple(simular_zonas(f["entry_id"], f["field1"], [None, None, None])) + (f["id"],) for f in filas]
+    conexion = conectar()
+    cursor = conexion.cursor()
+    try:
+        cursor.executemany("UPDATE lecturas SET field2 = %s, field3 = %s, field4 = %s WHERE id = %s", cambios)
+        conexion.commit()
+    finally:
+        cursor.close()
+
+
 def sincronizar():
     c = mi_config()
     canal = c["canal"]
@@ -202,7 +240,16 @@ def sincronizar():
         return
 
     ultimo = consultar("SELECT MAX(entry_id) AS ultimo FROM lecturas WHERE canal = %s", (canal,))[0]["ultimo"] or 0
-    nuevas = [fila_lectura(e, canal) for e in datos.get("feeds", []) if e.get("entry_id", 0) > ultimo]
+    nuevas = []
+    for e in datos.get("feeds", []):
+        if e.get("entry_id", 0) <= ultimo:
+            continue
+        fila = list(fila_lectura(e, canal))
+        fila[4:7] = simular_zonas(fila[1], fila[3], fila[4:7])
+        nuevas.append(tuple(fila))
+
+    if SIMULAR_ZONAS:
+        rellenar_zonas_viejas(canal)
     if not nuevas:
         return
 
@@ -315,9 +362,9 @@ def calcular_estado():
     temperaturas = [z["temp"] for z in zonas if z["temp"] is not None]
     kpis = {
         "optimas": sum(1 for z in zonas if z["estado"] == "ok"),
-        "total": len(zonas),
+        "total": sum(1 for z in zonas if z["estado"] != "none"),
         "alertas": len(alertas),
-        "gradiente": round(max(temperaturas) - min(temperaturas), 1) if temperaturas else None,
+        "gradiente": round(max(temperaturas) - min(temperaturas), 1) if len(temperaturas) > 1 else None,
     }
 
     return {
@@ -556,6 +603,13 @@ def logout():
     return redirect("/login?ok=salida")
 
 
+def contrasena_segura(contrasena):
+    """Mínimo 8 caracteres, al menos una mayúscula y al menos un número."""
+    return (len(contrasena) >= 8
+            and re.search(r"[A-Z]", contrasena) is not None
+            and re.search(r"[0-9]", contrasena) is not None)
+
+
 @app.route("/registro", methods=["POST"])
 def registro():
     nombre = request.form.get("nombre", "").strip()
@@ -563,8 +617,10 @@ def registro():
     contrasena = request.form.get("contrasena", "")
     confirmar = request.form.get("confirmar", "")
 
-    if not nombre or not correo or len(contrasena) < 8 or contrasena != confirmar:
+    if not nombre or not correo or contrasena != confirmar:
         return redirect("/login?error=datos#registro")
+    if not contrasena_segura(contrasena):
+        return redirect("/login?error=contrasena#registro")
 
     conexion = conectar()
     cursor = conexion.cursor()
@@ -705,7 +761,7 @@ MENSAJES_CONFIG = {
     "contrasena": {
         "ok": "Contraseña cambiada.",
         "actual": "La contraseña actual no es correcta.",
-        "nueva": "La nueva contraseña debe tener mínimo 8 caracteres y coincidir con la confirmación.",
+        "nueva": "La nueva contraseña debe tener mínimo 8 caracteres, una mayúscula y un número, y coincidir con la confirmación.",
     },
     "dashboard": {
         "ok": "Criterios guardados. Las alertas ya usan los nuevos límites.",
@@ -756,7 +812,7 @@ def guardar_contrasena():
     guardada = fila[0]["contrasena_hash"] if fila else None
     if not guardada or not check_password_hash(guardada, actual):
         return volver("contrasena", "actual")
-    if len(nueva) < 8 or nueva != confirmar:
+    if not contrasena_segura(nueva) or nueva != confirmar:
         return volver("contrasena", "nueva")
 
     ejecutar("UPDATE usuarios SET contrasena_hash = %s WHERE id = %s",
