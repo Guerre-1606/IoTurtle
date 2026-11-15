@@ -72,6 +72,8 @@ SENSORES = [
      "fields": ["field5", "field7"]},
     {"nombre": "DS18B20", "funcion": "Temperatura del suelo", "interfaz": "1-Wire",
      "fields": ["field6"]},
+    {"nombre": "Ventilador", "funcion": "Actuador controlado desde la página (field8: 0 apagado, 1 encendido)",
+     "interfaz": "GPIO · relé", "fields": ["field8"]},
     {"nombre": "Zonas simuladas", "funcion": "Soleada, Intermedia y Sombra estimadas desde el MLX90614",
      "interfaz": "Software (app.py)", "fields": ["field2", "field3", "field4"]},
 ]
@@ -83,6 +85,7 @@ DESFASE_ZONAS = {"field2": 4.0, "field3": 1.5, "field4": -2.0}
 
 FIELDS = [f"field{i}" for i in range(1, 8)]
 NOMBRE_FIELD = {z["field"]: z["nombre"] for z in ZONAS + GENERALES}
+NOMBRE_FIELD["field8"] = "Estado del ventilador"
 
 CRITERIOS_DEFECTO = {"tmax": 30.0, "tmin": 20.0, "hmin": 60.0}
 
@@ -131,6 +134,29 @@ def ejecutar(sql, datos=()):
         conexion.commit()
     finally:
         cursor.close()
+
+
+# Columnas que se agregaron después: se crean solas la primera vez
+COLUMNAS_NUEVAS = [
+    ("lecturas", "field8", "TINYINT NULL"),
+    ("configuracion_usuario", "write_key", "VARCHAR(64) NULL"),
+]
+columnas_listas = False
+
+
+@app.before_request
+def asegurar_columnas():
+    global columnas_listas
+    if columnas_listas or request.path.startswith(("/Css/", "/Js/", "/IMG/")):
+        return
+    try:
+        for tabla, columna, tipo in COLUMNAS_NUEVAS:
+            if not consultar(f"SHOW COLUMNS FROM {tabla} LIKE %s", (columna,)):
+                ejecutar(f"ALTER TABLE {tabla} ADD COLUMN {columna} {tipo}")
+                print(f"Columna {tabla}.{columna} creada")
+        columnas_listas = True
+    except Exception as e:
+        print("No se pudieron revisar las columnas nuevas:", e)
 
 
 def mi_config():
@@ -226,6 +252,13 @@ def rellenar_zonas_viejas(canal):
         cursor.close()
 
 
+def estado_ventilador(valor):
+    try:
+        return 1 if int(float(valor)) == 1 else 0
+    except (TypeError, ValueError):
+        return None
+
+
 def sincronizar():
     c = mi_config()
     canal = c["canal"]
@@ -250,7 +283,10 @@ def sincronizar():
         if e.get("entry_id", 0) <= ultimo:
             continue
         fila = list(fila_lectura(e, canal))
+        if all(v is None for v in fila[3:10]):
+            continue  # entrada que solo trae field8 (la orden que manda la página), no es una lectura
         fila[4:7] = simular_zonas(fila[1], fila[3], fila[4:7])
+        fila.append(estado_ventilador(e.get("field8")))
         nuevas.append(tuple(fila))
 
     if not nuevas:
@@ -261,8 +297,8 @@ def sincronizar():
     try:
         cursor.executemany(
             "INSERT IGNORE INTO lecturas "
-            "(canal, entry_id, recibido, field1, field2, field3, field4, field5, field6, field7) "
-            "VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)",
+            "(canal, entry_id, recibido, field1, field2, field3, field4, field5, field6, field7, field8) "
+            "VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)",
             nuevas,
         )
         conexion.commit()
@@ -837,6 +873,7 @@ def dispositivos():
     totales = consultar("SELECT COUNT(*) AS n, MIN(recibido) AS primera, MAX(recibido) AS ultima "
                         "FROM lecturas WHERE canal = %s", (mi_canal(),))[0]
     return pagina("dispositivos.html", "dispositivos", estado=estado, sensores=sensores, totales=totales,
+                  ventilador=datos_ventilador(),
                   canal=mi_canal(), canal_nombre=mi_config().get("canal_nombre"))
 
 
@@ -862,6 +899,7 @@ MENSAJES_CONFIG = {
         "key": "Escribe la Read API Key.",
         "credenciales": "ThingSpeak rechazó ese canal o esa clave. Revisa que sea la Read API Key del mismo canal.",
         "red": "No se pudo contactar a ThingSpeak. Revisa tu conexión e intenta de nuevo.",
+        "write": "La Write API Key no es válida.",
     },
 }
 
@@ -939,7 +977,13 @@ def guardar_broker():
     if not datos:
         return volver("broker", "credenciales")
 
-    guardar_config(canal=canal, read_key=read_key, canal_nombre=datos["channel"].get("name", "")[:120])
+    campos = {"canal": canal, "read_key": read_key, "canal_nombre": datos["channel"].get("name", "")[:120]}
+    write_key = request.form.get("write_key", "").strip()
+    if write_key:
+        if len(write_key) > 64:
+            return volver("broker", "write")
+        campos["write_key"] = write_key
+    guardar_config(**campos)
     ultima_sincronizacion.pop(canal, None)
     return volver("broker", "ok")
 
@@ -961,6 +1005,7 @@ def configuracion():
                        (session["usuario"]["id"],))[0]
     config = mi_config() or {}
     clave = config.get("read_key") or ""
+    clave_w = config.get("write_key") or ""
 
     seccion = request.args.get("s")
     codigo = request.args.get("ok") or request.args.get("error")
@@ -974,12 +1019,61 @@ def configuracion():
                   criterios=obtener_criterios(), zonas=ZONAS, generales=GENERALES,
                   canal=config.get("canal") or "", canal_nombre=config.get("canal_nombre"),
                   clave_oculta=("•" * 8 + clave[-4:]) if clave else "",
+                  write_oculta=("•" * 8 + clave_w[-4:]) if clave_w else "",
                   mensaje=mensaje)
 
 
 # =========================================================
 # APIs que usa el JavaScript
 # =========================================================
+# =========================================================
+# Ventilador (field8): la página escribe, la Raspberry lee y confirma
+# =========================================================
+THINGSPEAK_UPDATE = "https://api.thingspeak.com/update.json"
+ESPERA_ESCRITURA = 25  # ThingSpeak gratis acepta 1 escritura cada 15 s por canal
+
+
+def datos_ventilador():
+    fila = consultar("SELECT field8, recibido FROM lecturas WHERE canal = %s AND field8 IS NOT NULL "
+                     "ORDER BY recibido DESC LIMIT 1", (mi_canal(),))
+    return {
+        "estado": fila[0]["field8"] if fila else None,
+        "confirmado": hora_local(fila[0]["recibido"]) if fila else None,
+        "puede_controlar": bool((mi_config() or {}).get("write_key")),
+    }
+
+
+@app.route("/api/ventilador", methods=["GET", "POST"])
+@login_requerido
+@config_requerida
+def api_ventilador():
+    if request.method == "GET":
+        sincronizar()
+        return jsonify(datos_ventilador())
+
+    write_key = (mi_config() or {}).get("write_key")
+    if not write_key:
+        return jsonify({"error": "Primero guarda la Write API Key en Configuración."}), 409
+    datos = request.get_json(silent=True) or {}
+    if datos.get("estado") not in (0, 1):
+        return jsonify({"error": "Estado no válido."}), 400
+
+    limite = time.time() + ESPERA_ESCRITURA
+    while True:
+        try:
+            r = requests.post(THINGSPEAK_UPDATE, timeout=8,
+                              data={"api_key": write_key, "field8": datos["estado"]})
+            entrada = r.json() if r.ok and r.text.strip() not in ("", "0") else 0
+        except Exception as e:
+            print("ThingSpeak no recibió la orden:", e)
+            entrada = 0
+        if entrada:
+            return jsonify({"ok": True, "estado": datos["estado"]})
+        if time.time() + 3 > limite:
+            return jsonify({"error": "ThingSpeak no aceptó la orden. Revisa la Write API Key e intenta de nuevo."}), 502
+        time.sleep(3)  # canal ocupado: la Raspberry acaba de publicar
+
+
 # =========================================================
 # Asistente con IA (Groq, plan gratis)
 # =========================================================
@@ -1038,6 +1132,9 @@ def contexto_ia():
     valores = [f"{z['nombre']} {z['temp']:.1f} °C ({nombres_estado[z['estado']]})" for z in estado["zonas"] if z["temp"] is not None]
     valores += [f"{g['nombre']} {g['valor']:.1f} {g['unidad']} ({nombres_estado[g['estado']]})" for g in estado["generales"] if g["valor"] is not None]
     partes.append(f"\nÚltima lectura ({hora_local(ultima)}): " + "; ".join(valores) + ".")
+    ventilador = datos_ventilador()["estado"]
+    if ventilador is not None:
+        partes.append(f"Ventilador: {'ENCENDIDO' if ventilador == 1 else 'apagado'} (según la Raspberry).")
     if estado["alertas"]:
         partes.append("Alertas activas ahora: " + "; ".join(f"{a['titulo']} ({a['detalle']})" for a in estado["alertas"]))
     else:

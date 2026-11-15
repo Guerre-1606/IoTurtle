@@ -423,3 +423,31 @@
   .chat { height: calc(100svh - 15rem); min-height: 420px; }
   .chat-msg { max-width: 90%; }
 }
+
+/* ---------- Ventilador (field8) ---------- */
+.ventilador {
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between;
+  gap: 1rem 1.5rem; margin-bottom: 1rem;
+}
+.ventilador-info { display: flex; align-items: center; gap: 1rem; }
+.ventilador-info h2 { margin: 0 0 .35rem; }
+.ventilador-icono {
+  display: grid; place-items: center; flex: none;
+  width: 3.25rem; height: 3.25rem; border-radius: 50%;
+  background: var(--mist); color: var(--forest);
+}
+.ventilador-icono svg { width: 2rem; height: 2rem; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; }
+.ventilador.girando .ventilador-icono { background: #E3F2E7; }
+.ventilador.girando .ventilador-icono svg { animation: vent-giro 1.2s linear infinite; }
+@keyframes vent-giro { to { transform: rotate(360deg); } }
+.ventilador-estado { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem; margin: 0; }
+.ventilador-estado small { color: var(--muted); }
+.pill.apagado { background: #E9EDEC; color: var(--muted); }
+.ventilador-botones { display: flex; gap: .6rem; }
+.ventilador-botones .btn-dash:disabled { opacity: .55; cursor: wait; }
+.ventilador-botones .btn-dash[aria-pressed="true"] { box-shadow: 0 0 0 3px rgba(27, 107, 58, .25); }
+.ventilador-falta { margin: 0; }
+.ventilador-mensaje { flex-basis: 100%; margin: 0; font-size: .9rem; color: var(--muted); }
+.ventilador-mensaje.ok { color: var(--ok); }
+.ventilador-mensaje.error { color: var(--high); }
+@media (prefers-reduced-motion: reduce) { .ventilador.girando .ventilador-icono svg { animation: none; } }

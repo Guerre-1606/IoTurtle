@@ -9,6 +9,31 @@
   </div>
 </header>
 
+<section class="panel ventilador" id="ventilador" aria-labelledby="tituloVentilador"
+         data-estado="{{ ventilador.estado if ventilador.estado is not none else '' }}">
+  <div class="ventilador-info">
+    <span class="ventilador-icono" aria-hidden="true">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="2"/><path d="M12 10c0-4 1-7 4-7s3 4-1 6M14 12c4 0 7 1 7 4s-4 3-6-1M12 14c0 4-1 7-4 7s-3-4 1-6M10 12c-4 0-7-1-7-4s4-3 6 1"/></svg>
+    </span>
+    <div>
+      <h2 id="tituloVentilador">Ventilador</h2>
+      <p class="ventilador-estado">
+        <span class="pill" id="ventPill">{% if ventilador.estado == 1 %}Encendido{% elif ventilador.estado == 0 %}Apagado{% else %}Sin datos{% endif %}</span>
+        <small id="ventNota">{% if ventilador.confirmado %}Confirmado por la Raspberry · {{ ventilador.confirmado }}{% else %}La Raspberry todavía no ha reportado el estado{% endif %}</small>
+      </p>
+    </div>
+  </div>
+  {% if ventilador.puede_controlar %}
+    <div class="ventilador-botones" role="group" aria-label="Control del ventilador">
+      <button class="btn-dash" type="button" data-estado="1">Encender</button>
+      <button class="btn-dash btn-dash-ghost" type="button" data-estado="0">Apagar</button>
+    </div>
+  {% else %}
+    <p class="muted ventilador-falta">Para controlarlo, guarda la <strong>Write API Key</strong> en <a href="/dashboard/configuracion#broker">Configuración</a>.</p>
+  {% endif %}
+  <p class="ventilador-mensaje" id="ventMensaje" role="status" hidden></p>
+</section>
+
 <section class="device-grid">
   {% for s in sensores %}
     <article class="panel device">
@@ -37,4 +62,8 @@
     <p class="chart-note">Un sensor aparece «Activo» si su última lectura tiene menos de 2 minutos y trae todas sus variables.</p>
   </article>
 </section>
+{% endblock %}
+
+{% block scripts %}
+<script src="/Js/ventilador.js"></script>
 {% endblock %}

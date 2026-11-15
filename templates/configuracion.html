@@ -159,6 +159,12 @@
                  placeholder="Pega aquí la Read API Key" {% if not clave_oculta %}required{% endif %}>
           {% if clave_oculta %}<small class="hint">Guardada: {{ clave_oculta }}. Déjala vacía para conservarla.</small>{% endif %}
         </label>
+        <label class="field">
+          <span>Write API Key <small>(opcional, para controlar el ventilador)</small></span>
+          <input type="password" name="write_key" autocomplete="off" spellcheck="false" maxlength="64"
+                 placeholder="Pega aquí la Write API Key">
+          {% if write_oculta %}<small class="hint">Guardada: {{ write_oculta }}. Déjala vacía para conservarla.</small>{% endif %}
+        </label>
         <button class="btn-dash" type="submit">Guardar y probar conexión</button>
       </form>
       {% if mensaje and mensaje.seccion == "broker" and mensaje.ok %}
