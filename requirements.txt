@@ -1,8 +1,6 @@
-flask
-requests
-python-dotenv
-requests
-pandas
-mysql-connector-python
-gunicorn
-
+flask==3.0.3
+gunicorn==23.0.0
+mysql-connector-python==9.1.0
+python-dotenv==1.0.1
+requests==2.32.3
+pandas==2.2.3

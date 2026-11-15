@@ -49,6 +49,7 @@
     <p class="auth-msg" id="authMsg" role="alert" hidden></p>
 
     <!-- Botón de Google: lo maneja Flask en /auth/google -->
+    {% if google %}
     <a class="btn-google" href="/auth/google">
       <!-- Descarga el ícono oficial de Google (guía de marca de Google Sign-In) y guárdalo en IMG/google.svg -->
       <img src="/IMG/google.svg" alt="" width="20" height="20" onerror="this.remove()">
@@ -56,6 +57,7 @@
     </a>
 
     <p class="auth-divider"><span>o con tu correo</span></p>
+    {% endif %}
 
     <!-- ---------- Iniciar sesión ---------- -->
     <section role="tabpanel" id="panelLogin" aria-labelledby="tabLogin">

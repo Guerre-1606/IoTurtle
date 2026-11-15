@@ -1,9 +1,11 @@
 import math
 import os
 import re
+import secrets
 import time
 from datetime import datetime, timedelta, timezone
 from functools import wraps
+from urllib.parse import urlencode
 
 import mysql.connector
 import pandas as pd
@@ -231,6 +233,9 @@ def sincronizar():
         return
     ultima_sincronizacion[canal] = time.time()
 
+    if SIMULAR_ZONAS:
+        rellenar_zonas_viejas(canal)
+
     try:
         datos = pedir_thingspeak(canal, c["read_key"], 100)
     except Exception as e:
@@ -248,8 +253,6 @@ def sincronizar():
         fila[4:7] = simular_zonas(fila[1], fila[3], fila[4:7])
         nuevas.append(tuple(fila))
 
-    if SIMULAR_ZONAS:
-        rellenar_zonas_viejas(canal)
     if not nuevas:
         return
 
@@ -576,7 +579,7 @@ def login():
     if request.method == "GET":
         if "usuario" in session:
             return redirect("/dashboard")
-        return render_template("login.html")
+        return render_template("login.html", google=google_activo())
 
     correo = request.form.get("correo", "").strip().lower()
     contrasena = request.form.get("contrasena", "")
@@ -584,9 +587,16 @@ def login():
     filas = consultar("SELECT * FROM usuarios WHERE correo = %s", (correo,))
     usuario = filas[0] if filas else None
 
+    if usuario and not usuario["contrasena_hash"] and usuario["google_id"]:
+        return redirect("/login?error=usa_google")
     if not usuario or not usuario["contrasena_hash"] or not check_password_hash(usuario["contrasena_hash"], contrasena):
         return redirect("/login?error=credenciales")
 
+    iniciar_sesion(usuario)
+    return redirect("/dashboard")
+
+
+def iniciar_sesion(usuario):
     session.clear()
     session["usuario"] = {
         "id": usuario["id"],
@@ -594,6 +604,83 @@ def login():
         "correo": usuario["correo"],
         "rol": usuario["rol"],
     }
+
+
+# =========================================================
+# Iniciar sesión con Google (OAuth 2.0)
+# =========================================================
+GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID")
+GOOGLE_CLIENT_SECRET = os.getenv("GOOGLE_CLIENT_SECRET")
+
+
+def google_activo():
+    return bool(GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET)
+
+
+def url_callback_google():
+    # En Render la app está detrás de un proxy: se fuerza https fuera de localhost
+    url = request.url_root.rstrip("/") + "/auth/google/callback"
+    if not request.host.startswith(("127.0.0.1", "localhost")):
+        url = url.replace("http://", "https://", 1)
+    return url
+
+
+@app.route("/auth/google")
+def auth_google():
+    if not google_activo():
+        return redirect("/login?error=google")
+    session["google_state"] = secrets.token_urlsafe(24)
+    parametros = {
+        "client_id": GOOGLE_CLIENT_ID,
+        "redirect_uri": url_callback_google(),
+        "response_type": "code",
+        "scope": "openid email profile",
+        "state": session["google_state"],
+        "prompt": "select_account",
+    }
+    return redirect("https://accounts.google.com/o/oauth2/v2/auth?" + urlencode(parametros))
+
+
+@app.route("/auth/google/callback")
+def auth_google_callback():
+    if not google_activo() or not request.args.get("code"):
+        return redirect("/login?error=google")
+    if request.args.get("state") != session.pop("google_state", None):
+        return redirect("/login?error=google")
+
+    try:
+        token = requests.post("https://oauth2.googleapis.com/token", timeout=10, data={
+            "code": request.args["code"],
+            "client_id": GOOGLE_CLIENT_ID,
+            "client_secret": GOOGLE_CLIENT_SECRET,
+            "redirect_uri": url_callback_google(),
+            "grant_type": "authorization_code",
+        }).json()
+        perfil = requests.get("https://openidconnect.googleapis.com/v1/userinfo", timeout=10,
+                              headers={"Authorization": f"Bearer {token['access_token']}"}).json()
+    except Exception as e:
+        print("Error con Google:", e)
+        return redirect("/login?error=google")
+
+    if not perfil.get("sub") or not perfil.get("email") or not perfil.get("email_verified"):
+        return redirect("/login?error=google")
+
+    google_id = perfil["sub"]
+    correo = perfil["email"].lower()
+    nombre = (perfil.get("name") or correo.split("@")[0])[:120]
+    foto = perfil.get("picture")
+
+    filas = consultar("SELECT * FROM usuarios WHERE google_id = %s OR correo = %s "
+                      "ORDER BY google_id = %s DESC LIMIT 1", (google_id, correo, google_id))
+    if filas:
+        usuario = filas[0]
+        ejecutar("UPDATE usuarios SET google_id = %s, foto = %s WHERE id = %s", (google_id, foto, usuario["id"]))
+    else:
+        ejecutar("INSERT INTO usuarios (nombre, correo, google_id, foto) VALUES (%s, %s, %s, %s)",
+                 (nombre, correo, google_id, foto))
+        usuario = consultar("SELECT * FROM usuarios WHERE google_id = %s", (google_id,))[0]
+
+    iniciar_sesion(usuario)
     return redirect("/dashboard")
 
 
