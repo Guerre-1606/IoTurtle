@@ -533,6 +533,7 @@ PAGINAS = {
     "reportes": ("reportes", "Reportes"),
     "reportes_csv": ("reportes", "Reportes"),
     "dispositivos": ("dispositivos", "Dispositivos"),
+    "asistente": ("asistente", "Asistente"),
 }
 
 
@@ -979,6 +980,151 @@ def configuracion():
 # =========================================================
 # APIs que usa el JavaScript
 # =========================================================
+# =========================================================
+# Asistente con IA (Groq, plan gratis)
+# =========================================================
+GROQ_API_KEY = os.getenv("GROQ_API_KEY")
+GROQ_MODELO = os.getenv("GROQ_MODEL", "openai/gpt-oss-120b")
+GROQ_URL = "https://api.groq.com/openai/v1/chat/completions"
+ultima_pregunta = {}
+
+INSTRUCCIONES_IA = """Eres el asistente de IoTurtle, un sistema IoT que monitorea el recinto de una tortuga terrestre.
+Respondes en español, claro y breve (máximo unos 8 renglones, salvo que pidan más detalle).
+Usa SOLO los datos del recinto que vienen abajo. Si algo no está en los datos, dilo; no inventes valores ni fechas.
+Cuando des cifras, di de qué periodo son (última lectura, 24 horas o 7 días).
+Ten en cuenta que Soleada, Intermedia y Sombra son zonas SIMULADAS a partir del sensor del Recinto, no medidas.
+Puedes dar recomendaciones prácticas de manejo del recinto (calor, sombra, humedad, sustrato).
+No eres veterinario: si preguntan por la salud de la tortuga, da orientación general y sugiere consultar a un veterinario de reptiles.
+Puedes usar **negrilla** y listas con "- ". No uses tablas."""
+
+
+def texto_variables(reporte):
+    lineas = []
+    for v in reporte["variables"]:
+        if not v["lecturas"]:
+            lineas.append(f"- {v['nombre']}: sin datos")
+            continue
+        u = v["unidad"]
+        linea = (f"- {v['nombre']}: mín {v['minimo']:.1f} {u}, prom {v['promedio']:.1f} {u}, "
+                 f"máx {v['maximo']:.1f} {u}")
+        if v["desviacion"] is not None:
+            linea += f", desv {v['desviacion']:.2f}"
+        if v["en_rango"] is not None:
+            linea += f", {v['en_rango']:.0f} % del tiempo en rango"
+        lineas.append(linea)
+    if reporte["gradiente_promedio"] is not None:
+        lineas.append(f"- Gradiente térmico entre zonas: prom {reporte['gradiente_promedio']:.1f} °C, "
+                      f"máx {reporte['gradiente_maximo']:.1f} °C")
+    return "\n".join(lineas)
+
+
+def contexto_ia():
+    estado = calcular_estado()
+    c = estado["criterios"]
+    ahora = ahora_utc()
+    partes = [
+        f"Fecha y hora actual (Colombia): {hora_local(ahora, '%d/%m/%Y %I:%M %p')}",
+        f"Límites configurados: temperatura entre {c['tmin']:.1f} y {c['tmax']:.1f} °C; humedad mínima {c['hmin']:.0f} %.",
+        "Sensores: Recinto = MLX90614 (temperatura superficial, medida). Humedad y temperatura ambiente = SHT31. "
+        "Temperatura del suelo = DS18B20. Soleada, Intermedia y Sombra = simuladas desde el Recinto.",
+    ]
+
+    if not estado.get("ultima"):
+        partes.append("Todavía no hay lecturas guardadas.")
+        return "\n".join(partes)
+
+    ultima = ultimas_lecturas(1)[0]["recibido"]
+    nombres_estado = {"ok": "óptima", "high": "ALTA", "low": "BAJA", "none": "sin dato"}
+    valores = [f"{z['nombre']} {z['temp']:.1f} °C ({nombres_estado[z['estado']]})" for z in estado["zonas"] if z["temp"] is not None]
+    valores += [f"{g['nombre']} {g['valor']:.1f} {g['unidad']} ({nombres_estado[g['estado']]})" for g in estado["generales"] if g["valor"] is not None]
+    partes.append(f"\nÚltima lectura ({hora_local(ultima)}): " + "; ".join(valores) + ".")
+    if estado["alertas"]:
+        partes.append("Alertas activas ahora: " + "; ".join(f"{a['titulo']} ({a['detalle']})" for a in estado["alertas"]))
+    else:
+        partes.append("Alertas activas ahora: ninguna.")
+
+    for clave in ("24h", "7d"):
+        df = lecturas_df(desde=ahora - RANGOS[clave]["delta"])
+        if df.empty:
+            partes.append(f"\nÚltimas {RANGOS[clave]['texto']}: sin lecturas.")
+            continue
+        reporte = resumen_reporte(df, c)
+        partes.append(f"\nEstadísticas últimas {RANGOS[clave]['texto']} ({reporte['lecturas']} lecturas, "
+                      f"{hora_local(reporte['desde'])} a {hora_local(reporte['hasta'])}):")
+        partes.append(texto_variables(reporte))
+        if clave == "7d":
+            episodios = episodios_alerta(df, c)
+            partes.append(f"\nEpisodios de alerta últimos 7 días: {len(episodios)} en total "
+                          f"({sum(1 for e in episodios if e['tipo'] == 'high')} altas, "
+                          f"{sum(1 for e in episodios if e['tipo'] == 'low')} bajas). Los más recientes:")
+            for e in episodios[:12]:
+                partes.append(f"- {e['titulo']}: {hora_local(e['inicio'])} a {hora_local(e['fin'], '%I:%M %p')}, "
+                              f"duró {formato_duracion(e['duracion'])}, {e['detalle']}")
+    return "\n".join(partes)
+
+
+def preguntar_groq(mensajes):
+    cuerpo = {"model": GROQ_MODELO, "messages": mensajes, "temperature": 0.3, "max_completion_tokens": 1500}
+    if GROQ_MODELO.startswith("openai/gpt-oss"):
+        cuerpo["reasoning_effort"] = "low"
+    r = requests.post(GROQ_URL, json=cuerpo, timeout=40,
+                      headers={"Authorization": f"Bearer {GROQ_API_KEY}"})
+    if r.status_code == 429:
+        raise RuntimeError("limite")
+    r.raise_for_status()
+    return r.json()["choices"][0]["message"]["content"].strip()
+
+
+@app.route("/dashboard/asistente")
+@login_requerido
+@config_requerida
+def asistente():
+    return pagina("asistente.html", "asistente", activo=bool(GROQ_API_KEY))
+
+
+@app.route("/api/chat", methods=["POST"])
+@login_requerido
+@config_requerida
+def api_chat():
+    if not GROQ_API_KEY:
+        return jsonify({"error": "El asistente no está activo: falta la variable GROQ_API_KEY en el servidor."}), 503
+
+    datos = request.get_json(silent=True) or {}
+    pregunta = str(datos.get("mensaje", "")).strip()[:800]
+    if not pregunta:
+        return jsonify({"error": "Escribe una pregunta."}), 400
+
+    usuario_id = session["usuario"]["id"]
+    if time.time() - ultima_pregunta.get(usuario_id, 0) < 3:
+        return jsonify({"error": "Espera un momento antes de preguntar otra vez."}), 429
+    ultima_pregunta[usuario_id] = time.time()
+
+    historial = []
+    for m in (datos.get("historial") or [])[-6:]:
+        rol = "assistant" if m.get("rol") == "asistente" else "user"
+        texto = str(m.get("texto", ""))[:1500]
+        if texto:
+            historial.append({"role": rol, "content": texto})
+
+    try:
+        contexto = contexto_ia()
+    except Exception as e:
+        print("No se pudieron preparar los datos para el asistente:", e)
+        return jsonify({"error": "No se pudieron leer los datos del recinto. Intenta de nuevo."}), 500
+
+    mensajes = [{"role": "system", "content": INSTRUCCIONES_IA + "\n\nDATOS DEL RECINTO:\n" + contexto},
+                *historial, {"role": "user", "content": pregunta}]
+    try:
+        respuesta = preguntar_groq(mensajes)
+    except RuntimeError:
+        return jsonify({"error": "Se alcanzó el límite gratis de consultas por ahora. Intenta en un minuto."}), 429
+    except Exception as e:
+        print("Error con Groq:", e)
+        return jsonify({"error": "El asistente no respondió. Intenta de nuevo en un momento."}), 502
+
+    return jsonify({"respuesta": respuesta or "No tengo una respuesta para eso."})
+
+
 @app.route("/api/estado")
 @login_requerido
 @config_requerida

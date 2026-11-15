@@ -49,6 +49,10 @@
       <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 4h8v8H4z M6 1v3 M10 1v3 M6 12v3 M10 12v3 M1 6h3 M1 10h3 M12 6h3 M12 10h3"/></svg>
       <span>Dispositivos</span>
     </a>
+    <a href="/dashboard/asistente" {% if pagina == 'asistente' %}class="active" aria-current="page"{% endif %}>
+      <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2 3h12v8H7l-3 3v-3H2z M5 7h.01 M8 7h.01 M11 7h.01"/></svg>
+      <span>Asistente</span>
+    </a>
     <a href="/dashboard/configuracion" {% if pagina == 'configuracion' %}class="active" aria-current="page"{% endif %}>
       <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 10.5a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5z M8 1v2 M8 13v2 M1 8h2 M13 8h2 M3 3l1.5 1.5 M11.5 11.5L13 13 M3 13l1.5-1.5 M11.5 4.5L13 3"/></svg>
       <span>Configuración</span>

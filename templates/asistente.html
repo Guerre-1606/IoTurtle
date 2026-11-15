@@ -1,0 +1,44 @@
+{% extends "base_dash.html" %}
+{% block titulo %}Asistente{% endblock %}
+
+{% block contenido %}
+<header class="dash-head">
+  <div>
+    <h1>Asistente IoTurtle</h1>
+    <p>Pregúntale por los datos de tu recinto · usa la última lectura, las últimas 24 horas y los últimos 7 días</p>
+  </div>
+</header>
+
+{% if not activo %}
+<section class="panel chat-aviso">
+  <h2>El asistente todavía no está activo</h2>
+  <p>Falta la clave de Groq en el servidor. Crea una en <strong>console.groq.com → API Keys</strong> y agrégala en Render como la variable <code>GROQ_API_KEY</code>.</p>
+</section>
+{% else %}
+<section class="panel chat" aria-label="Conversación con el asistente">
+  <div class="chat-mensajes" id="chatMensajes" role="log" aria-live="polite">
+    <div class="chat-msg asistente">
+      <p>Hola {{ usuario.nombre.split(' ')[0] }}, soy el asistente de IoTurtle. Puedo analizar las temperaturas, la humedad y las alertas de tu recinto. ¿Qué quieres saber?</p>
+    </div>
+  </div>
+
+  <div class="chat-sugerencias" id="chatSugerencias">
+    <button type="button">¿Cómo está el recinto ahora?</button>
+    <button type="button">Resume las últimas 24 horas</button>
+    <button type="button">¿Qué zona pasa más tiempo fuera de rango?</button>
+    <button type="button">¿Qué puedo hacer para mejorar la humedad?</button>
+  </div>
+
+  <form class="chat-form" id="chatForm">
+    <label class="sr-only" for="chatTexto">Escribe tu pregunta</label>
+    <textarea id="chatTexto" rows="1" maxlength="800" placeholder="Escribe tu pregunta…" required></textarea>
+    <button class="btn-dash" type="submit" id="chatEnviar">Enviar</button>
+  </form>
+  <p class="chat-nota">Las respuestas las genera una IA con tus datos; puede equivocarse. Para temas de salud de la tortuga, consulta a un veterinario.</p>
+</section>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+{% if activo %}<script src="/Js/asistente.js"></script>{% endif %}
+{% endblock %}
