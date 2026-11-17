@@ -1007,7 +1007,7 @@ MENSAJES_CONFIG = {
         "key": "Escribe la Read API Key.",
         "credenciales": "ThingSpeak rechazó ese canal o esa clave. Revisa que sea la Read API Key del mismo canal.",
         "red": "No se pudo contactar a ThingSpeak. Revisa tu conexión e intenta de nuevo.",
-        "write": "La Write API Key no es válida.",
+        "write": "La Write API Key debe tener 16 letras o números, sin espacios. Cópiala de ThingSpeak → API Keys.",
     },
 }
 
@@ -1086,9 +1086,9 @@ def guardar_broker():
         return volver("broker", "credenciales")
 
     campos = {"canal": canal, "read_key": read_key, "canal_nombre": datos["channel"].get("name", "")[:120]}
-    write_key = request.form.get("write_key", "").strip()
+    write_key = request.form.get("write_key", "").strip().upper()
     if write_key:
-        if len(write_key) > 64:
+        if not re.fullmatch(r"[A-Z0-9]{16}", write_key):
             return volver("broker", "write")
         campos["write_key"] = write_key
     guardar_config(**campos)
@@ -1137,8 +1137,8 @@ def configuracion():
 # =========================================================
 # Ventilador (field8): la página escribe, la Raspberry lee y confirma
 # =========================================================
-THINGSPEAK_UPDATE = "https://api.thingspeak.com/update.json"
-ESPERA_ESCRITURA = 25  # ThingSpeak gratis acepta 1 escritura cada 15 s por canal
+THINGSPEAK_UPDATE = "https://api.thingspeak.com/update"
+ESPERA_ESCRITURA = 22  # ThingSpeak gratis acepta 1 escritura cada 15 s; la Raspberry publica cada 20 s
 
 
 def datos_ventilador():
@@ -1166,20 +1166,36 @@ def api_ventilador():
     if datos.get("estado") not in (0, 1):
         return jsonify({"error": "Estado no válido."}), 400
 
+    # Misma petición que funciona en el navegador: GET /update?api_key=...&field8=...
+    # ThingSpeak responde el número de la entrada nueva, o 0 si la rechaza.
     limite = time.time() + ESPERA_ESCRITURA
+    intentos, r = 0, None
     while True:
+        intentos += 1
         try:
-            r = requests.post(THINGSPEAK_UPDATE, timeout=8,
-                              data={"api_key": write_key, "field8": datos["estado"]})
-            entrada = r.json() if r.ok and r.text.strip() not in ("", "0") else 0
-        except Exception as e:
-            print("ThingSpeak no recibió la orden:", e)
-            entrada = 0
-        if entrada:
+            r = requests.get(THINGSPEAK_UPDATE, timeout=5,
+                             params={"api_key": write_key, "field8": datos["estado"]})
+            texto = r.text.strip()
+            respuesta = f"HTTP {r.status_code}, «{texto[:30]}»"
+            entrada = int(texto) if r.ok and texto.isdigit() else 0
+        except requests.RequestException as e:
+            r = None
+            respuesta, entrada = f"sin respuesta ({e.__class__.__name__})", 0
+
+        if entrada > 0:
+            print(f"Ventilador: field8={datos['estado']} aceptado (entrada {entrada}, intento {intentos})")
             return jsonify({"ok": True, "estado": datos["estado"]})
+        print(f"Ventilador: ThingSpeak rechazó field8={datos['estado']} (intento {intentos}): {respuesta}")
+
+        if r is not None and r.status_code in (400, 401, 403):
+            break  # la clave no sirve: reintentar no cambia nada
         if time.time() + 3 > limite:
-            return jsonify({"error": "ThingSpeak no aceptó la orden. Revisa la Write API Key e intenta de nuevo."}), 502
+            break
         time.sleep(3)  # canal ocupado: la Raspberry acaba de publicar
+
+    return jsonify({"error": f"ThingSpeak no aceptó la orden ({intentos} intentos, última respuesta: {respuesta}). "
+                             f"La Write API Key guardada termina en «{write_key[-4:]}»: compárala con la de ThingSpeak "
+                             "y revisa que Field 8 esté activado."}), 502
 
 
 # =========================================================
