@@ -517,6 +517,114 @@ def resumen_reporte(df, c):
 
 
 # =========================================================
+# Bienestar animal: índice basado en el AWAG
+# (Animal Welfare Assessment Grid, Wolfensohn et al., 2015)
+# Cada parámetro va de 1 (ideal) a 10 (peor). Aquí se estiman
+# con los sensores de las últimas 24 h.
+# =========================================================
+AWAG_VENTANA = timedelta(hours=24)
+AWAG_CACHE_SEG = 60
+AWAG_REF = {
+    "exceso_t": 3.0,       # °C promedio fuera del rango que se toma como el peor caso
+    "deficit_h": 20.0,     # puntos de humedad por debajo del mínimo (peor caso)
+    "gradiente": 5.0,      # °C entre zona caliente y fría que permite termorregularse
+    "desv_normal": 2.0,    # desviación del Recinto que se considera ciclo día/noche normal
+    "desv_extra": 4.0,     # desviación adicional que lleva al peor caso
+    "eventos": 6.0,        # episodios, horas sin datos o cambios del ventilador (peor caso)
+}
+AWAG_PARAMETROS = [("fisico", "Físico"), ("psicologico", "Psicológico"),
+                   ("ambiental", "Ambiental"), ("procedimental", "Procedimental")]
+AWAG_CATEGORIAS = [(85, "Bueno", "ok"), (70, "Aceptable", "ok"), (50, "Comprometido", "low"), (0, "Crítico", "high")]
+awag_cache = {}
+
+
+def acotar(x):
+    return float(min(1.0, max(0.0, x)))
+
+
+def puntaje_awag(fraccion):
+    return round(1 + 9 * acotar(fraccion), 1)
+
+
+def calcular_awag(df, c, cambios_ventilador=0):
+    """Devuelve los 4 parámetros AWAG (1-10), el CWAS (área) y un índice 0-100."""
+    if df.empty or df["field1"].dropna().empty:
+        return None
+    r = AWAG_REF
+    reporte = resumen_reporte(df, c)
+
+    # Ambiental: fracción del tiempo con zonas o humedad fuera de los criterios
+    en_rango = [v["en_rango"] for v in reporte["variables"] if v["en_rango"] is not None]
+    fuera = 1 - (sum(en_rango) / len(en_rango)) / 100 if en_rango else 0
+    ambiental = puntaje_awag(fuera)
+
+    # Físico: cuánto se aleja el Recinto (sensor real) del rango y cuánto falta de humedad
+    t = df["field1"].dropna()
+    exceso_t = ((t - c["tmax"]).clip(lower=0) + (c["tmin"] - t).clip(lower=0)).mean()
+    h = df["field5"].dropna()
+    deficit_h = (c["hmin"] - h).clip(lower=0).mean() if len(h) else 0.0
+    fisico = puntaje_awag(0.6 * acotar(exceso_t / r["exceso_t"]) + 0.4 * acotar(deficit_h / r["deficit_h"]))
+
+    # Psicológico: opción de termorregularse (gradiente entre zonas) y estabilidad del Recinto
+    gradiente = reporte["gradiente_promedio"] or 0.0
+    desviacion = t.std() if len(t) > 1 else 0.0
+    falta_gradiente = acotar((r["gradiente"] - gradiente) / r["gradiente"])
+    inestabilidad = acotar((desviacion - r["desv_normal"]) / r["desv_extra"])
+    psicologico = puntaje_awag(0.6 * falta_gradiente + 0.4 * inestabilidad)
+
+    # Procedimental: eventos que piden intervención del cuidador
+    episodios = len(episodios_alerta(df, c))
+    huecos = df["recibido"].diff()
+    horas_sin_datos = huecos[huecos > CORTE_EPISODIO].sum().total_seconds() / 3600 if len(df) > 1 else 0.0
+    procedimental = puntaje_awag(0.5 * acotar(episodios / r["eventos"])
+                                 + 0.3 * acotar(horas_sin_datos / r["eventos"])
+                                 + 0.2 * acotar(cambios_ventilador / r["eventos"]))
+
+    p = {"fisico": fisico, "psicologico": psicologico, "ambiental": ambiental, "procedimental": procedimental}
+    # CWAS: área del polígono que forman los 4 puntajes sobre los ejes de la cuadrícula (a 90°)
+    orden = [p[k] for k, _ in AWAG_PARAMETROS]
+    cwas = 0.5 * sum(orden[i] * orden[(i + 1) % 4] for i in range(4))
+    # Puntaje que daría la misma área si los 4 parámetros fueran iguales (área = 2·s²)
+    equivalente = math.sqrt(cwas / 2)
+    indice = round(100 * (10 - equivalente) / 9)
+    categoria, clase = next((n, cl) for minimo, n, cl in AWAG_CATEGORIAS if indice >= minimo)
+
+    detalle = {
+        "fisico": f"Exceso térmico prom. {exceso_t:.1f} °C · déficit de humedad {deficit_h:.0f} pts",
+        "psicologico": f"Gradiente prom. {gradiente:.1f} °C · desviación del Recinto {desviacion:.1f} °C",
+        "ambiental": f"{100 * (1 - fuera):.0f} % del tiempo dentro de los criterios",
+        "procedimental": f"{episodios} episodios de alerta · {horas_sin_datos:.1f} h sin datos · "
+                         f"{cambios_ventilador} cambios del ventilador",
+    }
+    return {
+        "parametros": [{"clave": k, "nombre": n, "puntaje": p[k], "detalle": detalle[k]} for k, n in AWAG_PARAMETROS],
+        "cwas": round(cwas, 1),
+        "equivalente": round(equivalente, 2),
+        "indice": indice,
+        "categoria": categoria,
+        "clase": clase,
+        "lecturas": len(df),
+    }
+
+
+def awag_actual():
+    c = obtener_criterios()
+    clave = (mi_canal(), c["tmin"], c["tmax"], c["hmin"])
+    guardado = awag_cache.get(clave)
+    if guardado and time.time() - guardado[0] < AWAG_CACHE_SEG:
+        return guardado[1]
+
+    desde = ahora_utc() - AWAG_VENTANA
+    df = lecturas_df(desde=desde)
+    estados = consultar("SELECT field8 FROM lecturas WHERE canal = %s AND recibido >= %s AND field8 IS NOT NULL "
+                        "ORDER BY recibido", (mi_canal(), desde))
+    cambios = sum(1 for a, b in zip(estados, estados[1:]) if a["field8"] != b["field8"])
+    resultado = calcular_awag(df, c, cambios)
+    awag_cache[clave] = (time.time(), resultado)
+    return resultado
+
+
+# =========================================================
 # Ayudas para las plantillas
 # =========================================================
 @app.template_filter("hora_local")
@@ -1132,6 +1240,12 @@ def contexto_ia():
     valores = [f"{z['nombre']} {z['temp']:.1f} °C ({nombres_estado[z['estado']]})" for z in estado["zonas"] if z["temp"] is not None]
     valores += [f"{g['nombre']} {g['valor']:.1f} {g['unidad']} ({nombres_estado[g['estado']]})" for g in estado["generales"] if g["valor"] is not None]
     partes.append(f"\nÚltima lectura ({hora_local(ultima)}): " + "; ".join(valores) + ".")
+    awag = awag_actual()
+    if awag:
+        partes.append(f"Bienestar animal (índice basado en AWAG, últimas 24 h): {awag['indice']}/100, "
+                      f"{awag['categoria']}. Parámetros de 1 (ideal) a 10 (peor): "
+                      + "; ".join(f"{x['nombre']} {x['puntaje']} ({x['detalle']})" for x in awag["parametros"])
+                      + ". Es un estimado con sensores, no una evaluación veterinaria.")
     ventilador = datos_ventilador()["estado"]
     if ventilador is not None:
         partes.append(f"Ventilador: {'ENCENDIDO' if ventilador == 1 else 'apagado'} (según la Raspberry).")
@@ -1226,7 +1340,13 @@ def api_chat():
 @login_requerido
 @config_requerida
 def api_estado():
-    return jsonify(calcular_estado())
+    estado = calcular_estado()
+    try:
+        estado["awag"] = awag_actual()
+    except Exception as e:
+        print("No se pudo calcular el AWAG:", e)
+        estado["awag"] = None
+    return jsonify(estado)
 
 
 @app.route("/api/serie")

@@ -451,3 +451,35 @@
 .ventilador-mensaje.ok { color: var(--ok); }
 .ventilador-mensaje.error { color: var(--high); }
 @media (prefers-reduced-motion: reduce) { .ventilador.girando .ventilador-icono svg { animation: none; } }
+
+/* ---------- Bienestar animal (AWAG) ---------- */
+.awag { margin-bottom: 1rem; }
+.awag-cuerpo {
+  display: grid; grid-template-columns: 150px minmax(0, 320px) minmax(0, 1fr);
+  gap: 1.25rem 1.75rem; align-items: center;
+}
+.awag-indice { display: flex; flex-direction: column; gap: .2rem; }
+.awag-indice strong { font: 700 3rem/1 var(--font-head); color: var(--ink); letter-spacing: -.03em; }
+.awag-indice strong small { font-size: 1.1rem; color: var(--muted); font-weight: 500; margin-left: .15rem; }
+.awag-indice > span { font: 600 .95rem var(--font-head); color: var(--ink); }
+.awag-cwas { color: var(--muted); }
+.awag-grafica { position: relative; height: 250px; }
+.awag-lista { list-style: none; margin: 0; padding: 0; display: grid; gap: .8rem; }
+.awag-lista li > div { display: flex; justify-content: space-between; align-items: baseline; font-weight: 600; }
+.awag-lista li small { display: block; color: var(--muted); font-size: .82rem; margin-top: .2rem; }
+.awag-lista .empty { color: var(--muted); }
+.awag-barra { display: block; height: 6px; border-radius: 999px; background: var(--mist); margin-top: .3rem; position: relative; overflow: hidden; }
+.awag-barra::after { content: ""; position: absolute; inset: 0 auto 0 0; width: max(var(--p), 4%); border-radius: inherit; background: var(--ok); }
+.awag-barra.low::after { background: var(--low); }
+.awag-barra.high::after { background: var(--high); }
+.t-ok { color: var(--ok); }
+.t-low { color: var(--low); }
+@media (max-width: 1280px) {
+  .awag-cuerpo { grid-template-columns: 150px minmax(0, 1fr); }
+  .awag-lista { grid-column: 1 / -1; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 600px) {
+  .awag-cuerpo { grid-template-columns: minmax(0, 1fr); }
+  .awag-indice { align-items: center; text-align: center; }
+  .awag-lista { grid-template-columns: minmax(0, 1fr); }
+}
